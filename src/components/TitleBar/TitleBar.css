@@ -7,26 +7,26 @@
   user-select: none;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border-color);
-  pointer-events: auto;
   box-sizing: border-box;
 }
 
 /* 
-  중요: Windows OS가 창을 최대화할 때 웹뷰 상단/우측 모서리 영역 8px을 화면 밖으로 깎아먹어 
-  마우스 클릭 좌표가 DWM에 의해 하이재킹되는 문제를 완벽하게 우회합니다.
-  최대화 상태일 때 높이를 44px로 늘리고, 버튼들을 화면 안쪽 안전지대(탑 패딩 8px, 우측 패딩 8px)로 밀어 넣어 격리합니다.
+  Windows OS 최대화 시 상단/좌우 6px 가량이 화면 바깥으로 나가서 가려지므로,
+  안쪽 패딩을 적용하여 모든 핵심 텍스트와 우측 창 제어 버튼이 화면 안쪽 안전 구역으로 밀리도록 배치합니다.
+  전체 높이는 32px로 완벽 고정되므로 상단에 검은색이나 흰색 여백 공간이 전혀 생기지 않습니다.
 */
 .titlebar.maximized {
-  height: 44px;
+  height: 32px;
+  padding-top: 6px;
+  padding-right: 6px;
+  padding-left: 6px;
 }
 
 .titlebar-left {
-  padding-left: 12px;
   display: flex;
   align-items: center;
   height: 100%;
   flex: 1;
-  cursor: default;
 }
 
 .titlebar-title {
@@ -39,14 +39,6 @@
   display: flex;
   height: 100%;
   flex-shrink: 0;
-  z-index: 99999 !important; /* 최우선 순위 락 */
-  pointer-events: auto !important;
-}
-
-.titlebar.maximized .titlebar-right {
-  padding-top: 8px;
-  padding-right: 8px;
-  height: 30px;
 }
 
 .titlebar-button {
@@ -59,12 +51,17 @@
   cursor: pointer;
   background-color: transparent;
   transition: background-color var(--transition-fast);
+  /* 
+    중요: 드래그 영역(drag-region)과 겹침으로 인해 마우스 클릭이 창 제어 버튼 위에서 
+    무효화(OS 창 드래그로 오판)되는 일을 완전히 없애기 위해 웹킷 non-drag 속성을 강제 부여합니다.
+  */
+  -webkit-app-region: no-drag !important;
   z-index: 99999 !important;
-  pointer-events: auto !important;
 }
 
+/* 최대화 시 상단 6px 공간 확보 상태에서 자연스럽게 100% 채움 */
 .titlebar.maximized .titlebar-button {
-  height: 30px;
+  height: 100%;
   border-radius: 4px;
 }
 

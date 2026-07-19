@@ -6,31 +6,56 @@ export const TitleBar: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
 
   // 최대화 상태 업데이트 헬퍼
-  const updateMaximizeState = useCallback(async () => {
+  const checkMaximizeState = useCallback(async () => {
     try {
-      const maximized = await getCurrentWindow().isMaximized();
+      const win = getCurrentWindow();
+      const maximized = await win.isMaximized();
       setIsMaximized(maximized);
     } catch (e) {
-      console.error(e);
+      console.error('최대화 상태 조회 실패:', e);
     }
   }, []);
 
   useEffect(() => {
     // 최초 상태 체크
-    updateMaximizeState();
+    checkMaximizeState();
 
-    // 윈도우 크기 변경 시 최대화 상태 실시간 갱신 리스너 등록 (Tauri 2.x API)
-    let unlisten: (() => void) | null = null;
-    getCurrentWindow().onResized(() => {
-      updateMaximizeState();
-    }).then((unsub) => {
-      unlisten = unsub;
-    }).catch(console.error);
+    // Tauri 2.x 리스너 구독 해제 함수 리스트
+    const unlistenActions: Array<() => void> = [];
 
-    return () => {
-      if (unlisten) unlisten();
+    const setupListeners = async () => {
+      try {
+        const win = getCurrentWindow();
+
+        // 1. 최대화 이벤트 구독
+        const unsubMaximized = await win.listen('tauri://maximized', () => {
+          setIsMaximized(true);
+        });
+        unlistenActions.push(unsubMaximized);
+
+        // 2. 최대화 해제 이벤트 구독
+        const unsubUnmaximized = await win.listen('tauri://unmaximized', () => {
+          setIsMaximized(false);
+        });
+        unlistenActions.push(unsubUnmaximized);
+
+        // 3. 리사이즈 이벤트 구독
+        const unsubResized = await win.listen('tauri://resize', () => {
+          checkMaximizeState();
+        });
+        unlistenActions.push(unsubResized);
+      } catch (e) {
+        console.error('Tauri 창 이벤트 리스너 등록 중 오류:', e);
+      }
     };
-  }, [updateMaximizeState]);
+
+    setupListeners();
+
+    // 컴포넌트 소멸 시 등록했던 모든 리스너 제거
+    return () => {
+      unlistenActions.forEach((unsub) => unsub());
+    };
+  }, [checkMaximizeState]);
 
   const handleMinimize = useCallback(async () => {
     try { 
@@ -49,7 +74,11 @@ export const TitleBar: React.FC = () => {
       } else {
         await win.maximize();
       }
-      setIsMaximized(!maximized);
+      // 상태 변경이 완료된 직후 상태 재점검 폴백 타이머 작동
+      setTimeout(async () => {
+        const realState = await win.isMaximized();
+        setIsMaximized(realState);
+      }, 50);
     } catch (e) {
       console.error('최대화 토글 실패:', e);
     }
@@ -65,11 +94,7 @@ export const TitleBar: React.FC = () => {
 
   return (
     <div className={`titlebar ${isMaximized ? 'maximized' : ''}`}>
-      {/* 
-        부모 .titlebar에서 data-tauri-drag-region을 제외하여 
-        우측 버튼들의 클릭이 하이재킹되는 문제를 완벽 해결하고, 
-        오직 좌측 영역을 통해서만 창을 드래그하여 이동할 수 있게 합니다.
-      */}
+      {/* 타이틀바의 좌측 부분만 드래그 가능 영역으로 설정 */}
       <div className="titlebar-left" data-tauri-drag-region>
         <span className="titlebar-title" data-tauri-drag-region>EveryMD</span>
       </div>
@@ -81,7 +106,7 @@ export const TitleBar: React.FC = () => {
           </svg>
         </div>
 
-        {/* 최대화/창 복원 (전체화면 상태에 따라 다른 최적화 아이콘 제공) */}
+        {/* 최대화/창 복원 */}
         <div className="titlebar-button" onClick={handleMaximize} title={isMaximized ? '이전 크기로 복원' : '최대화'}>
           {isMaximized ? (
             // 창 복원 아이콘 (겹친 사각형)
