@@ -1,0 +1,62 @@
+.statusbar {
+  height: 24px;
+  background-color: var(--accent-color);
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 11px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+[data-theme='light'] .statusbar {
+  background-color: var(--accent-color);
+}
+
+[data-theme='dark'] .statusbar {
+  background-color: var(--accent-hover);
+}
+
+.statusbar-left,
+.statusbar-center,
+.statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusbar-left {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusbar-center {
+  flex: 1;
+  justify-content: center;
+}
+
+.statusbar-right {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}

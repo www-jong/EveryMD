@@ -1,0 +1,81 @@
+.editor-container {
+  flex: 1;
+  overflow: auto;
+  padding: 2rem;
+  background-color: var(--bg-main);
+  display: flex;
+  justify-content: center;
+}
+
+.editor-container .milkdown {
+  width: 100%;
+  max-width: 800px;
+  color: var(--text-primary);
+}
+
+.editor-container .milkdown .ProseMirror {
+  outline: none;
+  min-height: calc(100vh - 200px);
+}
+
+.editor-container .milkdown h1,
+.editor-container .milkdown h2,
+.editor-container .milkdown h3,
+.editor-container .milkdown h4,
+.editor-container .milkdown h5,
+.editor-container .milkdown h6 {
+  color: var(--text-primary);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.editor-container .milkdown p {
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: 1em;
+}
+
+.editor-container .milkdown code {
+  background-color: var(--code-bg);
+  padding: 0.2em 0.4em;
+  border-radius: var(--border-radius);
+  font-family: monospace;
+  font-size: 0.9em;
+  color: var(--accent-color);
+}
+
+.editor-container .milkdown pre code {
+  background-color: transparent;
+  color: inherit;
+}
+
+.editor-container .milkdown blockquote {
+  border-left: 4px solid var(--accent-color);
+  padding-left: 1em;
+  color: var(--text-secondary);
+  margin-left: 0;
+}
+
+.editor-container .milkdown a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.editor-container .milkdown a:hover {
+  text-decoration: underline;
+}
+
+/* Override Milkdown Crepe variables if necessary */
+.milkdown-crepe {
+  --crepe-color-background: var(--bg-main) !important;
+  --crepe-color-surface: var(--bg-main) !important;
+  --crepe-color-on-background: var(--text-primary) !important;
+  --crepe-color-on-surface: var(--text-primary) !important;
+  --crepe-color-primary: var(--accent-color) !important;
+  --crepe-color-on-primary: var(--bg-main) !important;
+  --crepe-color-secondary: var(--text-secondary) !important;
+  --crepe-color-on-secondary: var(--bg-main) !important;
+  --crepe-color-error: #ef4444 !important;
+  --crepe-color-on-error: #ffffff !important;
+  --crepe-color-outline: var(--border-color) !important;
+}
