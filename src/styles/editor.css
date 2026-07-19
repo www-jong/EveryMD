@@ -65,17 +65,81 @@
   text-decoration: underline;
 }
 
-/* Override Milkdown Crepe variables if necessary */
-.milkdown-crepe {
-  --crepe-color-background: var(--bg-main) !important;
-  --crepe-color-surface: var(--bg-main) !important;
-  --crepe-color-on-background: var(--text-primary) !important;
-  --crepe-color-on-surface: var(--text-primary) !important;
-  --crepe-color-primary: var(--accent-color) !important;
-  --crepe-color-on-primary: var(--bg-main) !important;
-  --crepe-color-secondary: var(--text-secondary) !important;
-  --crepe-color-on-secondary: var(--bg-main) !important;
-  --crepe-color-error: #ef4444 !important;
-  --crepe-color-on-error: #ffffff !important;
-  --crepe-color-outline: var(--border-color) !important;
+/* Override Milkdown Crepe variables globally */
+:root {
+  --crepe-color-background: var(--bg-main);
+  --crepe-color-surface: var(--bg-sidebar);
+  --crepe-color-on-background: var(--text-primary);
+  --crepe-color-on-surface: var(--text-primary);
+  --crepe-color-primary: var(--accent-color);
+  --crepe-color-on-primary: var(--bg-main);
+  --crepe-color-secondary: var(--text-secondary);
+  --crepe-color-on-secondary: var(--bg-main);
+  --crepe-color-outline: var(--border-color);
+  --crepe-color-error: #ef4444;
 }
+
+[data-theme='dark'] {
+  --crepe-color-background: #1e1e2e;
+  --crepe-color-surface: #181825;
+  --crepe-color-on-background: #cdd6f4;
+  --crepe-color-on-surface: #a6adc8;
+  --crepe-color-primary: #b4befe;
+  --crepe-color-outline: #313244;
+}
+
+/* Force colors on specific Crepe elements to prevent light mode leak */
+.editor-container, 
+.editor-container .milkdown,
+.editor-container .crepe,
+.editor-container .ProseMirror,
+.milkdown-crepe {
+  background-color: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+.editor-container .milkdown .ProseMirror {
+  color: var(--text-primary) !important;
+}
+
+/* Adjust headings and paragraphs to ensure readable contrast */
+.editor-container .milkdown h1,
+.editor-container .milkdown h2,
+.editor-container .milkdown h3,
+.editor-container .milkdown h4,
+.editor-container .milkdown h5,
+.editor-container .milkdown h6 {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+
+.editor-container .milkdown p {
+  color: var(--text-primary) !important;
+}
+
+/* Code block styles */
+.editor-container .milkdown pre {
+  background-color: var(--code-bg) !important;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+}
+
+/* Placeholder and helper text styling for better visibility in both modes */
+.editor-container .milkdown .ProseMirror [data-placeholder]::before,
+.editor-container .milkdown .placeholder,
+.editor-container .milkdown [data-placeholder]::before,
+.milkdown-crepe [data-placeholder]::before {
+  color: var(--text-muted) !important;
+  opacity: 0.8;
+}
+
+[data-theme='dark'] .editor-container .milkdown .ProseMirror [data-placeholder]::before,
+[data-theme='dark'] .editor-container .milkdown .placeholder,
+[data-theme='dark'] .editor-container .milkdown [data-placeholder]::before,
+[data-theme='dark'] .milkdown-crepe [data-placeholder]::before {
+  color: #949cbb !important;
+  opacity: 0.9;
+}
+
+
