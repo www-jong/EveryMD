@@ -19,7 +19,12 @@
   color: var(--text-secondary);
 }
 
-.file-explorer-header button {
+.file-explorer-header .header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.file-explorer-header .header-btn {
   background: var(--bg-active);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
@@ -27,12 +32,21 @@
   border-radius: var(--border-radius);
   cursor: pointer;
   font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.file-explorer-header button:hover {
+.file-explorer-header .header-btn:hover {
   background: var(--accent-color);
   color: var(--bg-main);
   border-color: var(--accent-color);
+}
+
+.file-explorer-header .header-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-sidebar);
 }
 
 .file-explorer-content {
@@ -64,7 +78,6 @@
   margin-right: 8px;
   font-size: 14px;
 }
-
 .file-name {
   white-space: nowrap;
   overflow: hidden;
@@ -81,3 +94,45 @@
   color: var(--text-muted);
   font-size: 13px;
 }
+
+/* 탐색기 우클릭 컨텍스트 메뉴 스타일 */
+.explorer-context-menu {
+  position: fixed;
+  z-index: 25000; /* 다이얼로그 모달 위에서도 보일 수 있도록 충분히 높게 지정 */
+  background-color: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
+  padding: 4px 0;
+  min-width: 170px;
+  backdrop-filter: blur(8px);
+  animation: contextFadeIn 120ms ease-out;
+}
+
+@keyframes contextFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.context-menu-item {
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color var(--transition-fast);
+}
+
+.context-menu-item:hover {
+  background-color: var(--bg-hover);
+  color: var(--accent-color);
+}
+
+.context-menu-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 4px 0;
+}
+

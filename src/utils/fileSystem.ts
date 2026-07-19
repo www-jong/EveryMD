@@ -1,4 +1,4 @@
-import { readTextFile, writeTextFile, readDir } from '@tauri-apps/plugin-fs';
+import { readTextFile, writeTextFile, readDir, rename } from '@tauri-apps/plugin-fs';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { FileEntry } from '../types';
 
@@ -25,14 +25,15 @@ export const openFileDialog = async (): Promise<string | null> => {
   }
 };
 
-export const saveFileDialog = async (): Promise<string | null> => {
+export const saveFileDialog = async (defaultName?: string): Promise<string | null> => {
   if (!isTauri()) {
     console.warn('Tauri API는 Tauri 앱 내부에서만 작동합니다. 브라우저 가상 저장을 시도합니다.');
-    const fileName = prompt('저장할 파일명을 입력하세요:', 'Untitled.md');
+    const fileName = prompt('저장할 파일명을 입력하세요:', defaultName || 'Untitled.md');
     return fileName ? `/virtual/${fileName}` : null;
   }
   try {
     const selected = await save({
+      defaultPath: defaultName || 'Untitled.md',
       filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }],
     });
     return selected || null;
@@ -58,10 +59,36 @@ export const writeFile = async (path: string, content: string): Promise<void> =>
     const virtualFiles = JSON.parse(localStorage.getItem('everymd-virtual-files') || '{}');
     virtualFiles[path] = content;
     localStorage.setItem('everymd-virtual-files', JSON.stringify(virtualFiles));
-    alert(`브라우저 가상 저장 완료: ${path}`);
+    console.log(`브라우저 가상 저장 완료: ${path}`);
     return;
   }
   await writeTextFile(path, content);
+};
+
+export const renameFile = async (oldPath: string, newPath: string): Promise<void> => {
+  if (!isTauri()) {
+    const virtualFiles = JSON.parse(localStorage.getItem('everymd-virtual-files') || '{}');
+    if (virtualFiles[oldPath] !== undefined) {
+      virtualFiles[newPath] = virtualFiles[oldPath];
+      delete virtualFiles[oldPath];
+      localStorage.setItem('everymd-virtual-files', JSON.stringify(virtualFiles));
+    }
+    console.log(`브라우저 가상 이름 변경 완료: ${oldPath} -> ${newPath}`);
+    return;
+  }
+  await rename(oldPath, newPath);
+};
+
+// 파일 복제용 duplicateFile API 구현 추가
+export const duplicateFile = async (sourcePath: string): Promise<string> => {
+  const content = await readFile(sourcePath);
+  const dotIndex = sourcePath.lastIndexOf('.');
+  const ext = dotIndex !== -1 ? sourcePath.substring(dotIndex) : '';
+  const basePath = dotIndex !== -1 ? sourcePath.substring(0, dotIndex) : sourcePath;
+  const targetPath = `${basePath}_copy${ext}`;
+  
+  await writeFile(targetPath, content);
+  return targetPath;
 };
 
 export const openFolderDialog = async (): Promise<string | null> => {

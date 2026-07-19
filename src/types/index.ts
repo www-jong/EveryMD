@@ -20,4 +20,5 @@ export interface Settings {
   fontSize: number;
   autoSave: boolean;
   autoSaveDelay: number;
+  wordWrap: boolean; // 설정창 제어 옵션 추가
 }

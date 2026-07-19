@@ -44,7 +44,7 @@
   justify-content: flex-end;
 }
 
-.theme-toggle {
+.statusbar-btn {
   background: none;
   border: none;
   color: inherit;
@@ -53,10 +53,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 4px;
+  padding: 2px 6px;
   border-radius: 4px;
+  transition: background-color 150ms ease;
 }
 
-.theme-toggle:hover {
+.statusbar-btn:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }

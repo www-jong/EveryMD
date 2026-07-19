@@ -1,0 +1,50 @@
+.editor-toolbar {
+  height: 40px;
+  background-color: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 6px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.toolbar-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  min-width: 28px;
+  height: 28px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.toolbar-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--accent-color);
+}
+
+.toolbar-btn.bold {
+  font-weight: bold;
+}
+
+.toolbar-btn.italic {
+  font-style: italic;
+}
+
+.toolbar-btn.strikethrough {
+  text-decoration: line-through;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 16px;
+  background-color: var(--border-color);
+  margin: 0 4px;
+}

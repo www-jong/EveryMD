@@ -7,6 +7,17 @@
   user-select: none;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border-color);
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+/* 
+  중요: Windows OS가 창을 최대화할 때 웹뷰 상단/우측 모서리 영역 8px을 화면 밖으로 깎아먹어 
+  마우스 클릭 좌표가 DWM에 의해 하이재킹되는 문제를 완벽하게 우회합니다.
+  최대화 상태일 때 높이를 44px로 늘리고, 버튼들을 화면 안쪽 안전지대(탑 패딩 8px, 우측 패딩 8px)로 밀어 넣어 격리합니다.
+*/
+.titlebar.maximized {
+  height: 44px;
 }
 
 .titlebar-left {
@@ -15,6 +26,7 @@
   align-items: center;
   height: 100%;
   flex: 1;
+  cursor: default;
 }
 
 .titlebar-title {
@@ -26,6 +38,15 @@
 .titlebar-right {
   display: flex;
   height: 100%;
+  flex-shrink: 0;
+  z-index: 99999 !important; /* 최우선 순위 락 */
+  pointer-events: auto !important;
+}
+
+.titlebar.maximized .titlebar-right {
+  padding-top: 8px;
+  padding-right: 8px;
+  height: 30px;
 }
 
 .titlebar-button {
@@ -36,7 +57,15 @@
   align-items: center;
   color: var(--text-primary);
   cursor: pointer;
+  background-color: transparent;
   transition: background-color var(--transition-fast);
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
+.titlebar.maximized .titlebar-button {
+  height: 30px;
+  border-radius: 4px;
 }
 
 .titlebar-button:hover {
@@ -44,6 +73,6 @@
 }
 
 .titlebar-button.close:hover {
-  background-color: #e81123;
-  color: white;
+  background-color: #e81123 !important;
+  color: #ffffff !important;
 }
