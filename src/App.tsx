@@ -19,9 +19,11 @@ const App: React.FC = () => {
   useKeyboard({ onToggleSidebar: toggleSidebar });
   useTheme();
   
-  const activeTab = useFileStore((state) => state.getActiveTab());
+  const tabs = useFileStore((state) => state.tabs);
+  const activeTabId = useFileStore((state) => state.activeTabId);
   const openFile = useFileStore((state) => state.openFile);
   const updateContent = useFileStore((state) => state.updateContent);
+  const activeTab = tabs.find((t) => t.id === activeTabId) || null;
   const { isSettingsOpen, setSettingsOpen, wordWrap } = useSettingsStore();
 
   // URL 쿼리 파라미터 감지하여 새 창 독립 실행 시 지정된 파일 자동 오픈
@@ -66,7 +68,7 @@ const App: React.FC = () => {
             borderRight: '1px solid var(--border-color)',
             flexShrink: 0
           }}
-          title="사이드바 토글 (Ctrl+B)"
+          title="사이드바 토글 (Ctrl+\)"
         >
           {sidebarVisible ? '◀' : '▶'}
         </button>

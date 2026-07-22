@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useFileStore } from '../../stores/fileStore';
 import { useFileSystem } from '../../hooks/useFileSystem';
-import { revealItemInDir } from '@tauri-apps/plugin-opener'; // Tauri 2.x 파일 탐색기 열기 API
+import { invoke } from '@tauri-apps/api/core';
 import './TabBar.css';
 
 export const TabBar: React.FC = () => {
@@ -9,7 +9,7 @@ export const TabBar: React.FC = () => {
   const activeTabId = useFileStore((state) => state.activeTabId);
   const setActiveTabId = useFileStore((state) => state.setActiveTabId);
   const newFile = useFileStore((state) => state.newFile);
-  const closeTab = useFileStore((state) => state.closeTab);
+  const closeOtherTabs = useFileStore((state) => state.closeOtherTabs);
   const { handleCloseTab, handleRename } = useFileSystem();
 
   // 컨텍스트 메뉴 상태
@@ -59,8 +59,8 @@ export const TabBar: React.FC = () => {
       const tab = tabs.find((t) => t.id === contextMenu.tabId);
       if (tab?.filePath) {
         try {
-          // 파일 탐색기에서 파일을 선택한 상태로 폴더 열기
-          await revealItemInDir(tab.filePath);
+          // Tauri 2.x: plugin-opener의 revealItemInDir 커맨드를 직접 invoke로 호출
+          await invoke('plugin:opener|reveal_item_in_dir', { path: tab.filePath });
         } catch (err) {
           console.error('Failed to open file in explorer:', err);
         }
@@ -73,11 +73,7 @@ export const TabBar: React.FC = () => {
 
   const onCloseOthersClick = () => {
     if (contextMenu) {
-      tabs.forEach((tab) => {
-        if (tab.id !== contextMenu.tabId) {
-          closeTab(tab.id);
-        }
-      });
+      closeOtherTabs(contextMenu.tabId);
       setContextMenu(null);
     }
   };

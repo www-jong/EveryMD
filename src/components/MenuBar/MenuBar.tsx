@@ -107,17 +107,17 @@ export const MenuBar: React.FC = () => {
           편집
         </button>
         <div className="dropdown-menu">
-          <div className="dropdown-item" onClick={() => insertFormat('', '')}>
+          <div className="dropdown-item" onClick={() => { document.execCommand('undo'); setActiveMenu(null); }}>
             <span>되돌리기 (Undo)</span><kbd>Ctrl+Z</kbd>
           </div>
-          <div className="dropdown-item" onClick={() => insertFormat('', '')}>
+          <div className="dropdown-item" onClick={() => { document.execCommand('redo'); setActiveMenu(null); }}>
             <span>다시 실행 (Redo)</span><kbd>Ctrl+Y</kbd>
           </div>
           <div className="dropdown-divider" />
-          <div className="dropdown-item" onClick={() => insertFormat('', '')}>
+          <div className="dropdown-item" onClick={() => { document.execCommand('copy'); setActiveMenu(null); }}>
             <span>복사</span><kbd>Ctrl+C</kbd>
           </div>
-          <div className="dropdown-item" onClick={() => insertFormat('', '')}>
+          <div className="dropdown-item" onClick={() => { document.execCommand('paste'); setActiveMenu(null); }}>
             <span>붙여넣기</span><kbd>Ctrl+V</kbd>
           </div>
         </div>

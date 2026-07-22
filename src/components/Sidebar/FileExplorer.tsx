@@ -119,7 +119,7 @@ export const FileExplorer: React.FC = () => {
     loadRoot();
   }, [openFolderPath, refreshTrigger, loadRoot]);
 
-  // 자동 리프레시 폴링 감지
+  // 창 포커스 / 탭 전환 시 파일 목록 자동 갱신 (폴링 없이 이벤트 기반)
   useEffect(() => {
     if (!openFolderPath) return;
 
@@ -127,15 +127,10 @@ export const FileExplorer: React.FC = () => {
       triggerRefresh();
     };
 
-    const interval = setInterval(() => {
-      triggerRefresh();
-    }, 3000);
-
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleFocus);
 
     return () => {
-      clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleFocus);
     };

@@ -141,7 +141,7 @@ const DEFAULT_SHORTCUTS: ShortcutMap = {
   saveAsFile: 'ctrl+shift+s',
   closeTab: 'ctrl+w',
   toggleTheme: 'ctrl+shift+l',
-  toggleSidebar: 'ctrl+b',
+  toggleSidebar: 'ctrl+\\',
   openSettings: 'ctrl+,'
 };
 
