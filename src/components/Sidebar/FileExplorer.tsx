@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { openFolderDialog, readDirectory, readFile, renameFile, duplicateFile, isTauri } from '../../utils/fileSystem';
 import { useFileStore } from '../../stores/fileStore';
 import { FileEntry } from '../../types';
@@ -233,7 +233,7 @@ export const FileExplorer: React.FC = () => {
     }
 
     try {
-      await invoke('plugin:opener|reveal_item_in_dir', { path: entry.path });
+      await revealItemInDir(entry.path);
     } catch (err) {
       console.error('탐색기 열기 실패:', err);
       alert('탐색기에서 열기에 실패했습니다.');

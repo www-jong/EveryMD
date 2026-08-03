@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useFileStore } from '../../stores/fileStore';
 import { useFileSystem } from '../../hooks/useFileSystem';
-import { invoke } from '@tauri-apps/api/core';
+import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import './TabBar.css';
 
 export const TabBar: React.FC = () => {
@@ -63,8 +63,7 @@ export const TabBar: React.FC = () => {
       const tab = tabs.find((t) => t.id === contextMenu.tabId);
       if (tab?.filePath) {
         try {
-          // Tauri 2.x: plugin-opener의 revealItemInDir 커맨드를 직접 invoke로 호출
-          await invoke('plugin:opener|reveal_item_in_dir', { path: tab.filePath });
+          await revealItemInDir(tab.filePath);
         } catch (err) {
           console.error('Failed to open file in explorer:', err);
         }
