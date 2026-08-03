@@ -1,9 +1,15 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { useFileStore } from '../../stores/fileStore';
 import './TitleBar.css';
 
 export const TitleBar: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
+
+  // 현재 활성 탭 제목 구독
+  const tabs = useFileStore((state) => state.tabs);
+  const activeTabId = useFileStore((state) => state.activeTabId);
+  const activeTab = tabs.find((t) => t.id === activeTabId) || null;
 
   // 최대화 상태 업데이트 헬퍼
   const checkMaximizeState = useCallback(async () => {
@@ -97,6 +103,11 @@ export const TitleBar: React.FC = () => {
       {/* 타이틀바의 좌측 부분만 드래그 가능 영역으로 설정 */}
       <div className="titlebar-left" data-tauri-drag-region>
         <span className="titlebar-title" data-tauri-drag-region>EveryMD</span>
+        {activeTab && (
+          <span className="titlebar-filename" data-tauri-drag-region>
+            {activeTab.isDirty ? '● ' : '— '}{activeTab.title}
+          </span>
+        )}
       </div>
       <div className="titlebar-right">
         {/* 최소화 */}

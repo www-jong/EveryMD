@@ -27,12 +27,24 @@
   align-items: center;
   height: 100%;
   flex: 1;
+  padding-left: 12px;
 }
 
 .titlebar-title {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
+}
+
+.titlebar-filename {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
 }
 
 .titlebar-right {

@@ -228,7 +228,7 @@ export const MenuBar: React.FC = () => {
           도움말
         </button>
         <div className="dropdown-menu">
-          <div className="dropdown-item" onClick={() => triggerAction(() => alert('EveryMD v0.1.0\n크로스플랫폼 WYSIWYG 마크다운 에디터\n\n© 2026 EveryMD Team.'))}>
+          <div className="dropdown-item" onClick={() => triggerAction(() => alert('EveryMD v0.1.1\n크로스플랫폼 WYSIWYG 마크다운 에디터\n\n개발자: www-jong\nGitHub: https://github.com/www-jong/EveryMD\n\n© 2026 www-jong. MIT License.'))}>
             <span>EveryMD 정보</span>
           </div>
         </div>

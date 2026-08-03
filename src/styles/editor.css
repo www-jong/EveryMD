@@ -1,10 +1,14 @@
 .editor-container {
   flex: 1;
   overflow: auto;
-  padding: 2.5rem 3.5rem; /* 좌우 여백을 충분히 주어 좌측 시작 타이핑 밸런스 정립 */
+  padding: 2.5rem 3.5rem;
   background-color: var(--bg-main);
   display: flex;
-  justify-content: flex-start; /* 타이포라 및 표준 MD 프로그램과 같이 좌측 정렬 시작 */
+  justify-content: flex-start;
+  /* 포커스 상태 전환 애니메이션 */
+  transition: background-color 200ms ease;
+  outline: none;
+  position: relative;
 }
 
 /* 좌측 정렬을 기본으로 폭만 제한 */
@@ -25,6 +29,7 @@
   box-sizing: border-box;
   width: 100% !important;
   font-size: var(--editor-font-size, 16px) !important;
+  font-family: var(--editor-font-family, 'Inter'), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
   line-height: 1.7;
   text-align: left !important; /* 강제 좌측 정렬 */
 }
@@ -74,16 +79,17 @@
   background-color: var(--code-bg);
   padding: 0.25em 0.45em;
   border-radius: var(--border-radius);
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-mono, 'JetBrains Mono', 'Source Code Pro', monospace);
   font-size: 0.9em;
-  color: var(--accent-color);
+  color: var(--code-text, var(--accent-color)) !important;
 }
 
 .editor-container .milkdown pre code {
   background-color: transparent;
-  color: inherit;
+  color: var(--code-text, var(--accent-color)) !important;
   padding: 0;
   font-size: 0.95em;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Source Code Pro', monospace);
 }
 
 .editor-container .milkdown blockquote {
@@ -127,6 +133,17 @@
   --crepe-color-on-surface: #a6adc8;
   --crepe-color-primary: #b4befe;
   --crepe-color-outline: #313244;
+}
+
+/* 다크 테마 코드 영역 색상 강제 재정의 */
+[data-theme='dark'] .editor-container .milkdown code,
+[data-theme='dark'] .editor-container .milkdown pre code {
+  color: var(--code-text, #CBA6F7) !important;
+}
+
+[data-theme='dark'] .editor-container .milkdown pre {
+  background-color: var(--code-bg, #11111B) !important;
+  border-color: var(--border-color, #313244) !important;
 }
 
 /* Force colors on specific Crepe elements to prevent light mode leak */
@@ -220,15 +237,42 @@ div[data-role="balloon"] button {
   background-color: rgba(255, 255, 255, 0.02) !important;
 }
 
-/* 5. 에디터 초점(Focus) 링 강조 스타일 연동 */
+/* 에디터 포커스 링 — ProseMirror 기본 방식 오버라이드 */
 .editor-container .milkdown .ProseMirror {
-  border-left: 3px solid transparent !important;
-  padding-left: 16px !important;
-  transition: border-color 200ms ease, padding 200ms ease;
+  border-left: none !important;
+  padding-left: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: none;
+}
+
+/* 에디터 컨테이너가 포커스를 잡으면 배경을 살짝 다르게 + 상단 액센트 바 */
+.editor-container:focus-within {
+  background-color: var(--bg-editor-focused, var(--bg-main));
+}
+
+/* 포커스 시 에디터 위쪽에 얇은 액센트 라인 (Typora 스타일) */
+.editor-container:focus-within::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-color), var(--accent-hover));
+  z-index: 100;
+  opacity: 0;
+  animation: focus-line-in 300ms ease forwards;
+  pointer-events: none;
+}
+
+@keyframes focus-line-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .editor-container .milkdown .ProseMirror-focused {
-  border-left-color: var(--accent-color) !important; /* 포커싱되었을 때 좌측에 포인트 바 노출 */
+  outline: none !important;
   box-shadow: none !important;
 }
 

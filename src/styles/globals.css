@@ -1,4 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&display=swap');
 
 :root {
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -22,6 +26,8 @@
   --accent-hover: #4F46E5;
   
   --code-bg: #F3F4F6;
+  --bg-statusbar: #E9ECEF;
+  --statusbar-text: #495057;
 }
 
 [data-theme='dark'] {
@@ -40,6 +46,8 @@
   --accent-hover: #89B4FA;
   
   --code-bg: #181825;
+  --bg-statusbar: #11111B;
+  --statusbar-text: #A6ADC8;
 }
 
 *, *::before, *::after {

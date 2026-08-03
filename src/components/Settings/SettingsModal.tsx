@@ -12,6 +12,7 @@ type TabType = 'general' | 'shortcuts' | 'theme';
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const {
     fontSize,
+    fontFamily,
     autoSave,
     autoSaveDelay,
     wordWrap,
@@ -19,6 +20,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     customThemes,
     activeThemeId,
     setFontSize,
+    setFontFamily,
     setAutoSave,
     setAutoSaveDelay,
     setWordWrap,
@@ -272,6 +274,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
               <div className="setting-row">
                 <div className="setting-info">
+                  <span className="setting-label">에디터 글꼴 (Font Family)</span>
+                  <span className="setting-desc">에디터 본문에 적용되는 폰트를 선택합니다.</span>
+                </div>
+                <div className="setting-control">
+                  <select
+                    value={fontFamily}
+                    onChange={(e) => setFontFamily(e.target.value)}
+                    className="theme-dropdown"
+                    style={{ minWidth: '180px' }}
+                  >
+                    <option value="Inter">Inter (기본)</option>
+                    <option value="'Noto Sans KR'">Noto Sans KR (한국어)</option>
+                    <option value="'Nanum Gothic'">Nanum Gothic (나눔고딕)</option>
+                    <option value="'JetBrains Mono'">JetBrains Mono (코드)</option>
+                    <option value="'Source Code Pro'">Source Code Pro (코드)</option>
+                    <option value="Georgia, serif">Georgia (serif)</option>
+                    <option value="system-ui, sans-serif">시스템 기본 폰트</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="setting-row">
+                <div className="setting-info">
                   <span className="setting-label">자동 줄 바꿈</span>
                   <span className="setting-desc">본문 가로 길이에 맞추어 긴 문장을 줄바꿈 처리합니다.</span>
                 </div>
@@ -477,13 +502,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                       '--bg-main': '에디터 본문 배경',
                       '--bg-sidebar': '탐색기/사이드바 배경',
                       '--bg-titlebar': '상단 타이틀바 배경',
+                      '--bg-hover': '마우스 오버 배경',
+                      '--bg-active': '선택/활성화 배경',
+                      '--bg-statusbar': '하단 상태바 배경',
                       '--text-primary': '주요 글씨 색상',
                       '--text-secondary': '보조 텍스트 색상',
                       '--text-muted': '안내/메모 텍스트',
+                      '--statusbar-text': '상태바 텍스트 색상',
                       '--accent-color': '액센트 컬러 (주 포인트)',
                       '--accent-hover': '포인트 호버링 색상',
                       '--border-color': '경계선/나눔선',
-                      '--code-bg': '코드블록 백그라운드'
+                      '--code-bg': '코드블록 백그라운드',
+                      '--code-text': '코드 글자색 (코드블록 전용)'
                     };
 
                     const typedVariable = variable as keyof ThemeColors;
@@ -499,13 +529,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                           />
                           <input 
                             type="text" 
-                            value={value.toUpperCase()}
+                            value={value}
                             onChange={(e) => {
-                              if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
-                                handleColorPickerChange(typedVariable, e.target.value);
+                              const v = e.target.value;
+                              if (/^#[0-9A-Fa-f]{6}$/.test(v) || /^#[0-9A-Fa-f]{3}$/.test(v)) {
+                                handleColorPickerChange(typedVariable, v);
+                              } else {
+                                setEditingColors({ ...editingColors, [typedVariable]: v });
+                                setJsonEditText(JSON.stringify({ ...editingColors, [typedVariable]: v }, null, 2));
                               }
                             }}
                             className="color-hex-text"
+                            placeholder="#RRGGBB"
+                            spellCheck={false}
                           />
                         </div>
                       </div>

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { openFolderDialog, readDirectory, readFile, renameFile, duplicateFile, isTauri } from '../../utils/fileSystem';
 import { useFileStore } from '../../stores/fileStore';
 import { FileEntry } from '../../types';
@@ -187,7 +188,8 @@ export const FileExplorer: React.FC = () => {
       const newPath = parentPath + sep + newName.trim();
       
       await renameFile(entry.path, newPath);
-      triggerRefresh();
+      // 파일 시스템 처리 완료 후 즉각 갱신
+      setTimeout(() => triggerRefresh(), 80);
     } catch (err) {
       console.error('이름 변경 실패:', err);
       alert('이름을 변경할 수 없습니다.');
@@ -220,7 +222,23 @@ export const FileExplorer: React.FC = () => {
     }
   };
 
-  // 컨텍스트 기능 4: 새 창에서 열기 (Tauri WebviewWindow 활용)
+  // 컨텍스트 기능 4: 파일 탐색기에서 열기 (해당 파일/폴더를 선택한 채로 탐색기 오픈)
+  const handleRevealInExplorer = async () => {
+    const entry = contextMenu.entry;
+    if (!entry) return;
+
+    if (!isTauri()) {
+      alert('데스크톱 환경(Tauri)에서만 탐색기 열기를 지원합니다.');
+      return;
+    }
+
+    try {
+      await invoke('plugin:opener|reveal_item_in_dir', { path: entry.path });
+    } catch (err) {
+      console.error('탐색기 열기 실패:', err);
+      alert('탐색기에서 열기에 실패했습니다.');
+    }
+  };
   const handleOpenInNewWindow = () => {
     const entry = contextMenu.entry;
     if (!entry || entry.isDir) return;
@@ -290,6 +308,9 @@ export const FileExplorer: React.FC = () => {
         >
           <div className="context-menu-item" onClick={handleRename}>
             <span>이름 수정 (Rename)...</span>
+          </div>
+          <div className="context-menu-item" onClick={handleRevealInExplorer}>
+            <span>📂 탐색기에서 열기</span>
           </div>
           {contextMenu.entry && !contextMenu.entry.isDir && (
             <>

@@ -4,6 +4,10 @@ import App from './App';
 import './styles/globals.css';
 import './styles/editor.css';
 
+// WebView 기본 우클릭 메뉴 전역 비활성화 (Windows 우클릭 → 뒤로/새로고침/인쇄 방지)
+// 커스텀 context menu가 있는 컴포넌트에서는 이미 e.preventDefault()를 호출하므로 이중 방지 불필요
+document.addEventListener('contextmenu', (e) => e.preventDefault());
+
 interface Props {
   children: ReactNode;
 }

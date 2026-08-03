@@ -39,10 +39,14 @@ export const TabBar: React.FC = () => {
 
   const handleTabContextMenu = (e: React.MouseEvent, tabId: string) => {
     e.preventDefault();
+    const MENU_WIDTH = 180;
+    const MENU_HEIGHT = 130;
+    const x = Math.min(e.clientX, window.innerWidth - MENU_WIDTH - 8);
+    const y = Math.min(e.clientY, window.innerHeight - MENU_HEIGHT - 8);
     setContextMenu({
       visible: true,
-      x: e.clientX,
-      y: e.clientY,
+      x,
+      y,
       tabId,
     });
   };

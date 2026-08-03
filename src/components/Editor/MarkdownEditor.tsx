@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Crepe } from '@milkdown/crepe';
 import { MilkdownProvider, Milkdown, useEditor } from '@milkdown/react';
 import { EditorToolbar } from './EditorToolbar';
+import { useSettingsStore } from '../../stores/settingsStore';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 import './MarkdownEditor.css';
@@ -38,6 +39,7 @@ interface MarkdownEditorProps {
 }
 
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ content, onChange }) => {
+  const { fontSize, setFontSize } = useSettingsStore();
   
   const handleInsertMarkdown = (prefix: string, suffix: string = '') => {
     const editorEl = document.querySelector('.ProseMirror') as HTMLDivElement;
@@ -77,6 +79,18 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ content, onChang
     editorEl.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
+  // Ctrl+스크롤로 에디터 배율(폰트 크기) 조절
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const delta = e.deltaY > 0 ? -1 : 1;
+    const newSize = Math.min(32, Math.max(12, fontSize + delta));
+    if (newSize !== fontSize) {
+      setFontSize(newSize);
+    }
+  };
+
   // 에디터 컨테이너 클릭 시 빈 영역이어도 자동으로 실제 ProseMirror 입력 돔으로 초점 유입
   const handleContainerClick = (e: React.MouseEvent) => {
     // 툴바 버튼을 누르거나 탭 닫기 단추 등을 누른 경우 방지
@@ -111,8 +125,8 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ content, onChang
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       <EditorToolbar onInsertMarkdown={handleInsertMarkdown} />
       
-      {/* 컨테이너 클릭 바인딩 완료 */}
-      <div className="editor-container" onClick={handleContainerClick}>
+      {/* 컨테이너 클릭 바인딩 + Ctrl+스크롤 배율 조절 */}
+      <div className="editor-container" onClick={handleContainerClick} onWheel={handleWheel}>
         <MilkdownProvider>
           <EditorInner content={content} onChange={onChange} />
         </MilkdownProvider>

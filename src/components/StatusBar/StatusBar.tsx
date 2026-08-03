@@ -9,14 +9,20 @@ interface StatusBarProps {
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({ onOpenSettings }) => {
-  const activeTab = useFileStore((state) => state.getActiveTab());
+  // Zustand 셀렉터: getActiveTab() 직접 호출 대신 tabs+activeTabId에서 파생
+  const tabs = useFileStore((state) => state.tabs);
+  const activeTabId = useFileStore((state) => state.activeTabId);
+  const activeTab = tabs.find((t) => t.id === activeTabId) || null;
+
   const { theme, toggleTheme } = useTheme();
   const fontSize = useSettingsStore((state) => state.fontSize);
 
   return (
     <div className="statusbar">
       <div className="statusbar-left">
-        {activeTab ? (activeTab.filePath || '저장되지 않음') : '준비'}
+        {activeTab
+          ? (activeTab.filePath || `${activeTab.title} — 미저장`)
+          : '준비'}
       </div>
       <div className="statusbar-center">
         Ln 1, Col 1

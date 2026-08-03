@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { TitleBar } from './components/TitleBar/TitleBar';
 import { MenuBar } from './components/MenuBar/MenuBar';
 import { TabBar } from './components/TabBar/TabBar';
@@ -10,7 +10,7 @@ import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
 import { useFileStore } from './stores/fileStore';
 import { useSettingsStore } from './stores/settingsStore';
-import { readFile } from './utils/fileSystem';
+import { readFile, writeFile } from './utils/fileSystem';
 
 const App: React.FC = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
@@ -45,9 +45,91 @@ const App: React.FC = () => {
     }
   }, [openFile]);
 
-  const handleEditorChange = (markdown: string) => {
+  const handleEditorChange = useCallback((markdown: string) => {
     if (activeTab) {
       updateContent(activeTab.id, markdown);
+    }
+  }, [activeTab, updateContent]);
+
+  // ─── Auto-Save (debounced) ─────────────────────────────────────────────────
+  const { autoSave, autoSaveDelay } = useSettingsStore();
+  const markSaved = useFileStore((state) => state.markSaved);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!autoSave || !activeTab?.isDirty || !activeTab?.filePath) return;
+
+    // 이전 타이머 취소 후 새 타이머 시작 (debounce)
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
+    autoSaveTimerRef.current = setTimeout(async () => {
+      if (!activeTab?.filePath || !activeTab?.isDirty) return;
+      try {
+        await writeFile(activeTab.filePath, activeTab.content);
+        markSaved(activeTab.id, activeTab.filePath);
+      } catch (err) {
+        console.error('Auto-save 실패:', err);
+      }
+    }, autoSaveDelay);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [activeTab?.content, autoSave, autoSaveDelay]);
+
+  // ─── 타이틀바에 현재 파일명 반영 ─────────────────────────────────────────
+  useEffect(() => {
+    const fileName = activeTab?.title || 'EveryMD';
+    const dirty = activeTab?.isDirty ? '● ' : '';
+    document.title = `${dirty}${fileName} — EveryMD`;
+  }, [activeTab?.title, activeTab?.isDirty]);
+
+  // 드래그 앤 드롭 상태
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // 자식 요소로 이동 시 오화 방지
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const supported = files.filter(f => /\.(md|txt|markdown)$/i.test(f.name));
+
+    if (files.length > 0 && supported.length === 0) {
+      alert('\.md, .txt, .markdown 파일만 드래그하여 열 수 있습니다.');
+      return;
+    }
+
+    for (const file of supported) {
+      // 웹븷에서는 file.path가 타우리에서만 존재. 브라우저 API로 fallback
+      const filePath: string = (file as any).path || file.name;
+      try {
+        const content = await readFile(filePath);
+        openFile(filePath, content, file.name);
+      } catch (err) {
+        // path가 없으면 FileReader로 콘텐츠 읽기 (fallback)
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const content = ev.target?.result as string || '';
+          openFile(file.name, content, file.name);
+        };
+        reader.readAsText(file, 'utf-8');
+      }
     }
   };
 
@@ -74,9 +156,31 @@ const App: React.FC = () => {
         </button>
         
         <div 
-          className={`editor-wrapper-layout ${!wordWrap ? 'word-wrap-disabled' : ''}`}
-          style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+          className={`editor-wrapper-layout ${!wordWrap ? 'word-wrap-disabled' : ''}${isDragOver ? ' drag-over' : ''}`}
+          style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         >
+          {isDragOver && (
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 50,
+              backgroundColor: 'rgba(99, 102, 241, 0.12)',
+              border: '2px dashed var(--accent-color)',
+              borderRadius: '6px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              pointerEvents: 'none',
+              backdropFilter: 'blur(2px)'
+            }}>
+              <div style={{
+                color: 'var(--accent-color)', fontSize: '18px', fontWeight: 600,
+                background: 'var(--bg-main)', padding: '12px 24px', borderRadius: '8px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+              }}>
+                파일을 놓아 바로 열기 파일 (.md / .txt)
+              </div>
+            </div>
+          )}
           {activeTab ? (
             <MarkdownEditor
               key={activeTab.id}

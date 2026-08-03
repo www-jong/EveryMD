@@ -1,7 +1,8 @@
 .statusbar {
   height: 24px;
-  background-color: var(--accent-color);
-  color: #FFFFFF;
+  /* 테마 CSS 변수 연동: --bg-statusbar가 없으면 --bg-titlebar 폴백 사용 */
+  background-color: var(--bg-statusbar, var(--bg-titlebar));
+  color: var(--statusbar-text, var(--text-secondary));
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -9,14 +10,7 @@
   font-size: 11px;
   flex-shrink: 0;
   user-select: none;
-}
-
-[data-theme='light'] .statusbar {
-  background-color: var(--accent-color);
-}
-
-[data-theme='dark'] .statusbar {
-  background-color: var(--accent-hover);
+  border-top: 1px solid var(--border-color);
 }
 
 .statusbar-left,
@@ -44,6 +38,10 @@
   justify-content: flex-end;
 }
 
+.statusbar-item {
+  opacity: 0.85;
+}
+
 .statusbar-btn {
   background: none;
   border: none;
@@ -56,8 +54,10 @@
   padding: 2px 6px;
   border-radius: 4px;
   transition: background-color 150ms ease;
+  opacity: 0.85;
 }
 
 .statusbar-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--bg-hover);
+  opacity: 1;
 }
