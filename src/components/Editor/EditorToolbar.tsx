@@ -3,29 +3,31 @@ import './EditorToolbar.css';
 
 interface EditorToolbarProps {
   onInsertMarkdown: (prefix: string, suffix?: string) => void;
+  onSetHeading: (level: 1 | 2 | 3) => void;
+  onInsertCodeBlock: () => void;
 }
 
-export const EditorToolbar: React.FC<EditorToolbarProps> = ({ onInsertMarkdown }) => {
+export const EditorToolbar: React.FC<EditorToolbarProps> = ({ onInsertMarkdown, onSetHeading, onInsertCodeBlock }) => {
   return (
     <div className="editor-toolbar">
       <button 
         className="toolbar-btn" 
-        onClick={() => onInsertMarkdown('# ', '')} 
-        title="대제목 (H1)"
+        onClick={() => onSetHeading(1)} 
+        title="현재 줄을 대제목(H1)으로 변환"
       >
         H1
       </button>
       <button 
         className="toolbar-btn" 
-        onClick={() => onInsertMarkdown('## ', '')} 
-        title="중제목 (H2)"
+        onClick={() => onSetHeading(2)} 
+        title="현재 줄을 중제목(H2)으로 변환"
       >
         H2
       </button>
       <button 
         className="toolbar-btn" 
-        onClick={() => onInsertMarkdown('### ', '')} 
-        title="소제목 (H3)"
+        onClick={() => onSetHeading(3)} 
+        title="현재 줄을 소제목(H3)으로 변환"
       >
         H3
       </button>
@@ -57,11 +59,11 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({ onInsertMarkdown }
         onClick={() => onInsertMarkdown('> ', '')} 
         title="인용구"
       >
-        ”
+        "
       </button>
       <button 
         className="toolbar-btn" 
-        onClick={() => onInsertMarkdown('```markdown\n', '\n```')} 
+        onClick={onInsertCodeBlock} 
         title="코드 블록"
       >
         &lt;/&gt;

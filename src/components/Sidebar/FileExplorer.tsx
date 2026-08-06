@@ -1,17 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { openFolderDialog, readDirectory, readFile, renameFile, duplicateFile, isTauri } from '../../utils/fileSystem';
 import { useFileStore } from '../../stores/fileStore';
 import { FileEntry } from '../../types';
 import './FileExplorer.css';
-
-// Tauri 2.x 새 웹뷰 창 열기 클래스 동적 로드
-let WebviewWindow: any = null;
-if (isTauri()) {
-  import('@tauri-apps/api/webviewWindow').then((mod) => {
-    WebviewWindow = mod.WebviewWindow;
-  }).catch(console.error);
-}
 
 interface ContextMenuState {
   visible: boolean;
@@ -239,30 +232,26 @@ export const FileExplorer: React.FC = () => {
       alert('탐색기에서 열기에 실패했습니다.');
     }
   };
-  const handleOpenInNewWindow = () => {
+  const handleOpenInNewWindow = async () => {
     const entry = contextMenu.entry;
     if (!entry || entry.isDir) return;
 
-    if (!isTauri() || !WebviewWindow) {
-      alert('데스크톱 환경(Tauri)에서만 새 창 열기를 지원합니다.');
+    if (!isTauri()) {
       return;
     }
 
     try {
-      const windowId = 'everymd_window_' + Date.now();
-      const newWindow = new WebviewWindow(windowId, {
-        title: `${entry.name} - EveryMD`,
+      const windowId = 'everymd_' + Date.now();
+      const newWin = new WebviewWindow(windowId, {
+        title: `${entry.name} — EveryMD`,
         url: `index.html?openFile=${encodeURIComponent(entry.path)}`,
         width: 1000,
         height: 700,
-        decorations: false, // 새 윈도우도 일관되게 창 테두리를 비활성화하여 커스텀 상단바 작동 보장
+        decorations: false,
+        center: true,
       });
-
-      newWindow.once('tauri://created', () => {
-        console.log('새 윈도우 생성 완료:', windowId);
-      });
-      newWindow.once('tauri://error', (e: any) => {
-        console.error('새 윈도우 생성 에러:', e);
+      newWin.once('tauri://error', (e: unknown) => {
+        console.error('새 창 생성 실패:', e);
       });
     } catch (err) {
       console.error('새 창 생성 실패:', err);

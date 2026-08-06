@@ -40,7 +40,98 @@ interface MarkdownEditorProps {
 
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ content, onChange }) => {
   const { fontSize, setFontSize } = useSettingsStore();
-  
+
+  // ──────────────────────────────────────────────────
+  // 현재 커서가 있는 ProseMirror 블록(줄)의 텍스트를 가져와
+  // heading prefix를 교체한 뒤 paste event로 재삽입
+  // ──────────────────────────────────────────────────
+  const handleSetHeading = (level: 1 | 2 | 3) => {
+    const editorEl = document.querySelector('.ProseMirror') as HTMLDivElement;
+    if (!editorEl) return;
+
+    editorEl.focus();
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    // 현재 커서가 있는 블록 노드(p, h1, h2, h3, li 등) 탐색
+    let node: Node | null = selection.getRangeAt(0).startContainer;
+    // 텍스트 노드이면 부모 엘리먼트로 올라감
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+
+    // ProseMirror 내 블록 수준 요소를 찾을 때까지 올라감
+    let blockEl: HTMLElement | null = node as HTMLElement;
+    while (blockEl && blockEl !== editorEl) {
+      const parent: HTMLElement | null = blockEl.parentElement;
+      if (parent === editorEl || (parent && parent.classList.contains('ProseMirror'))) break;
+      blockEl = parent;
+    }
+    if (!blockEl || blockEl === editorEl) return;
+
+    // 현재 블록의 텍스트 전체 선택
+    const blockRange = document.createRange();
+    blockRange.selectNodeContents(blockEl);
+    selection.removeAllRanges();
+    selection.addRange(blockRange);
+
+    // 블록 전체 텍스트에서 기존 heading prefix 제거
+    const rawText = blockEl.innerText || blockEl.textContent || '';
+    const strippedText = rawText.replace(/^#{1,6}\s*/, '');
+
+    // 새 heading prefix 붙이기
+    const prefix = '#'.repeat(level) + ' ';
+    const newText = prefix + strippedText;
+
+    // paste event로 교체 (ProseMirror가 markdown으로 파싱)
+    try {
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', newText);
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData,
+      });
+      editorEl.dispatchEvent(pasteEvent);
+    } catch {
+      document.execCommand('insertText', false, newText);
+    }
+
+    editorEl.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  // ──────────────────────────────────────────────────
+  // 코드 블록 삽입: 선택 텍스트를 코드블록으로 감싸거나 빈 코드블록 삽입
+  // ──────────────────────────────────────────────────
+  const handleInsertCodeBlock = () => {
+    const editorEl = document.querySelector('.ProseMirror') as HTMLDivElement;
+    if (!editorEl) return;
+
+    editorEl.focus();
+
+    const selection = window.getSelection();
+    const selectedText = selection && selection.rangeCount > 0 ? selection.getRangeAt(0).toString() : '';
+    const codeContent = selectedText ? selectedText : '';
+    const textToInsert = '```\n' + codeContent + '\n```';
+
+    try {
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', textToInsert);
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData,
+      });
+      editorEl.dispatchEvent(pasteEvent);
+    } catch {
+      document.execCommand('insertText', false, textToInsert);
+    }
+
+    editorEl.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  // ──────────────────────────────────────────────────
+  // 인라인 마크다운 삽입 (굵게, 기울임, 링크 등)
+  // ──────────────────────────────────────────────────
   const handleInsertMarkdown = (prefix: string, suffix: string = '') => {
     const editorEl = document.querySelector('.ProseMirror') as HTMLDivElement;
     if (!editorEl) return;
@@ -54,22 +145,20 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ content, onChang
     const selectedText = range.toString();
     const textToInsert = prefix + selectedText + suffix;
 
-    const isBlockStructure = prefix.startsWith('|') || prefix.startsWith('```') || prefix.startsWith('> ');
+    // 블록 구조(표, 인용구)는 paste event로
+    const isBlockStructure = prefix.startsWith('|') || prefix.startsWith('> ');
 
     if (isBlockStructure) {
       try {
         const clipboardData = new DataTransfer();
         clipboardData.setData('text/plain', textToInsert);
-
         const pasteEvent = new ClipboardEvent('paste', {
           bubbles: true,
           cancelable: true,
-          clipboardData: clipboardData
+          clipboardData,
         });
-        
         editorEl.dispatchEvent(pasteEvent);
-      } catch (err) {
-        console.error('클립보드 이벤트 주입 실패, fallback 실행:', err);
+      } catch {
         document.execCommand('insertText', false, textToInsert);
       }
     } else {
@@ -93,27 +182,24 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ content, onChang
 
   // 에디터 컨테이너 클릭 시 빈 영역이어도 자동으로 실제 ProseMirror 입력 돔으로 초점 유입
   const handleContainerClick = (e: React.MouseEvent) => {
-    // 툴바 버튼을 누르거나 탭 닫기 단추 등을 누른 경우 방지
     const target = e.target as HTMLElement;
     if (target.closest('.editor-toolbar') || target.closest('button')) return;
 
     const editorEl = document.querySelector('.ProseMirror') as HTMLDivElement;
     if (editorEl && document.activeElement !== editorEl) {
       editorEl.focus();
-      
-      // 만약 커서 포지션이 흐트러졌다면 커서를 본문 맨 끝이나 기본 위치로 안전하게 맞춰줌
+
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-        // 이미 텍스트에 커서가 잡혀 있는 게 아닌 경우에만 갱신
         if (range.startOffset === range.endOffset && range.startOffset === 0 && editorEl.lastChild) {
           try {
             const newRange = document.createRange();
             newRange.selectNodeContents(editorEl.lastChild);
-            newRange.collapse(false); // 커서를 본문 끝으로 접기
+            newRange.collapse(false);
             selection.removeAllRanges();
             selection.addRange(newRange);
-          } catch (err) {
+          } catch {
             // 브라우저 샌드박스 보안 예외 방지
           }
         }
@@ -123,8 +209,12 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ content, onChang
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-      <EditorToolbar onInsertMarkdown={handleInsertMarkdown} />
-      
+      <EditorToolbar
+        onInsertMarkdown={handleInsertMarkdown}
+        onSetHeading={handleSetHeading}
+        onInsertCodeBlock={handleInsertCodeBlock}
+      />
+
       {/* 컨테이너 클릭 바인딩 + Ctrl+스크롤 배율 조절 */}
       <div className="editor-container" onClick={handleContainerClick} onWheel={handleWheel}>
         <MilkdownProvider>

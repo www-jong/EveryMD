@@ -1,7 +1,7 @@
 .editor-container {
   flex: 1;
   overflow: auto;
-  padding: 2.5rem 3.5rem;
+  padding: 2.5rem 3.5rem 2.5rem 4rem; /* 좌측 padding 확보 — 블록핸들 공간 */
   background-color: var(--bg-main);
   display: flex;
   justify-content: flex-start;
@@ -9,6 +9,7 @@
   transition: background-color 200ms ease;
   outline: none;
   position: relative;
+  overflow-x: hidden;
 }
 
 /* 좌측 정렬을 기본으로 폭만 제한 */
@@ -76,17 +77,17 @@
 
 /* 코드 블록 디자인 퀄리티 강화 */
 .editor-container .milkdown code {
-  background-color: var(--code-bg);
+  background-color: var(--code-bg) !important;
   padding: 0.25em 0.45em;
   border-radius: var(--border-radius);
   font-family: var(--font-mono, 'JetBrains Mono', 'Source Code Pro', monospace);
   font-size: 0.9em;
-  color: var(--code-text, var(--accent-color)) !important;
+  color: var(--code-text) !important;
 }
 
 .editor-container .milkdown pre code {
-  background-color: transparent;
-  color: var(--code-text, var(--accent-color)) !important;
+  background-color: transparent !important;
+  color: var(--code-text) !important;
   padding: 0;
   font-size: 0.95em;
   font-family: var(--font-mono, 'JetBrains Mono', 'Source Code Pro', monospace);
@@ -126,6 +127,17 @@
   --crepe-color-error: #ef4444;
 }
 
+/* ── 라이트 테마 코드 색상 ── */
+[data-theme='light'] .editor-container .milkdown code,
+[data-theme='light'] .editor-container .milkdown pre code {
+  color: var(--code-text, #5B21B6) !important;
+}
+[data-theme='light'] .editor-container .milkdown pre {
+  background-color: var(--code-bg, #F1F3F5) !important;
+  border-color: var(--border-color, #E9ECEF) !important;
+}
+
+/* ── 다크 테마 코드 색상 ── */
 [data-theme='dark'] {
   --crepe-color-background: #1e1e2e;
   --crepe-color-surface: #181825;
@@ -134,16 +146,31 @@
   --crepe-color-primary: #b4befe;
   --crepe-color-outline: #313244;
 }
-
-/* 다크 테마 코드 영역 색상 강제 재정의 */
 [data-theme='dark'] .editor-container .milkdown code,
 [data-theme='dark'] .editor-container .milkdown pre code {
-  color: var(--code-text, #CBA6F7) !important;
+  color: var(--code-text, #F5C2E7) !important;
 }
-
 [data-theme='dark'] .editor-container .milkdown pre {
   background-color: var(--code-bg, #11111B) !important;
   border-color: var(--border-color, #313244) !important;
+}
+
+/* ── Crepe 블록 핸들(행 설정창) 무조건 좌측 고정 ── */
+.milkdown .crepe-block-handle,
+.milkdown [data-role="block-handle"],
+.milkdown .milkdown-block-handle,
+[class*="block-handle"] {
+  left: -36px !important;
+  right: auto !important;
+  transform: none !important;
+}
+/* 블록 핸들 팝업/드롭다운도 좌측 표시 */
+.milkdown .crepe-block-menu,
+.milkdown [data-role="block-menu"],
+[class*="block-menu"] {
+  left: 0 !important;
+  right: auto !important;
+  transform-origin: top left !important;
 }
 
 /* Force colors on specific Crepe elements to prevent light mode leak */
