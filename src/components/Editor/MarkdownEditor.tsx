@@ -201,7 +201,8 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
     const editorEl = document.querySelector('.ProseMirror') as HTMLDivElement;
     if (editorEl && document.activeElement !== editorEl) {
-      editorEl.focus();
+      // preventScroll: true — 포커스 시 스크롤 점프 방지
+      editorEl.focus({ preventScroll: true });
 
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
