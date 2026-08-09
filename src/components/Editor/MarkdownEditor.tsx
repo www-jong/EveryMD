@@ -174,8 +174,11 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   };
 
   // Ctrl+스크롤로 에디터 배율(폰트 크기) 조절
+  // CodeMirror 코드블록 위에서는 가로채지 않음 (CM이 자체 핸들링)
   const handleWheel = (e: React.WheelEvent) => {
     if (!e.ctrlKey) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.cm-editor') || target.closest('.cm-scroller')) return;
     e.preventDefault();
     e.stopPropagation();
     const delta = e.deltaY > 0 ? -1 : 1;
@@ -184,8 +187,16 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   };
 
   // 에디터 빈 영역 클릭 시 포커스 유입
+  // CodeMirror 코드블록 내부 클릭은 절대 가로채지 않음 (입력 불가 버그 방지)
   const handleContainerClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
+    // CodeMirror 내부: CM이 스스로 포커스 담당
+    if (
+      target.closest('.cm-editor') ||
+      target.closest('.cm-content') ||
+      target.closest('.cm-scroller') ||
+      target.closest('.cm-gutters')
+    ) return;
     if (target.closest('.editor-toolbar') || target.closest('button')) return;
 
     const editorEl = document.querySelector('.ProseMirror') as HTMLDivElement;
@@ -213,6 +224,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       }
     }
   };
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>

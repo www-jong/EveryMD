@@ -96,7 +96,7 @@ const App: React.FC = () => {
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // 자식 요소로 이동 시 오화 방지
+    // 자식 요소로 이동 시 오발 방지
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
     }
