@@ -1,11 +1,11 @@
 .editor-container {
   flex: 1;
   overflow: auto;
-  padding: 2.5rem 3.5rem 2.5rem 4rem; /* 좌측 padding 확보 — 블록핸들 공간 */
+  /* 좌우 동일한 여백 — 블록핸들이 좌측 여백 안에 표시됨 */
+  padding: 2.5rem 5rem;
   background-color: var(--bg-main);
   display: flex;
   justify-content: flex-start;
-  /* 포커스 상태 전환 애니메이션 */
   transition: background-color 200ms ease;
   outline: none;
   position: relative;
@@ -155,22 +155,91 @@
   border-color: var(--border-color, #313244) !important;
 }
 
-/* ── Crepe 블록 핸들(행 설정창) 무조건 좌측 고정 ── */
+/* ── Crepe 블록 핸들(행 설정창): 텍스트 영역 바깥 좌측 여백에 고정 ── */
+/* padding 5rem(80px) 기준: 핸들을 -68px에 배치 → 텍스트와 겹치지 않음 */
 .milkdown .crepe-block-handle,
 .milkdown [data-role="block-handle"],
 .milkdown .milkdown-block-handle,
 [class*="block-handle"] {
-  left: -36px !important;
+  left: -68px !important;
   right: auto !important;
   transform: none !important;
 }
-/* 블록 핸들 팝업/드롭다운도 좌측 표시 */
+/* 블록 핸들 팝업/드롭다운: 텍스트 좌측 기준으로 뜨게 */
 .milkdown .crepe-block-menu,
 .milkdown [data-role="block-menu"],
 [class*="block-menu"] {
-  left: 0 !important;
+  left: -68px !important;
   right: auto !important;
   transform-origin: top left !important;
+}
+
+/* ── CodeMirror 코드블록 색상 재정의 (다크/라이트 공통) ── */
+/* 배경 */
+.editor-container .milkdown .cm-editor,
+.editor-container .milkdown .cm-scroller {
+  background-color: var(--code-bg) !important;
+}
+/* 라인 번호 영역 */
+.editor-container .milkdown .cm-gutters {
+  background-color: var(--code-bg) !important;
+  color: var(--text-muted) !important;
+  border-right: 1px solid var(--border-color) !important;
+}
+/* 활성 줄 강조 */
+.editor-container .milkdown .cm-activeLine {
+  background-color: rgba(128, 128, 128, 0.08) !important;
+}
+.editor-container .milkdown .cm-activeLineGutter {
+  background-color: rgba(128, 128, 128, 0.12) !important;
+}
+/* 코드 본문 텍스트 — var(--code-text) 적용 */
+.editor-container .milkdown .cm-content,
+.editor-container .milkdown .cm-line {
+  color: var(--code-text) !important;
+  caret-color: var(--text-primary) !important;
+}
+/* 구문 강조 토큰 (One Dark 스타일, 다크/라이트 모두 가독성 확보) */
+.editor-container .milkdown .cm-keyword   { color: #c678dd !important; }
+.editor-container .milkdown .cm-string    { color: #98c379 !important; }
+.editor-container .milkdown .cm-number    { color: #d19a66 !important; }
+.editor-container .milkdown .cm-comment   { color: #7f848e !important; font-style: italic; }
+.editor-container .milkdown .cm-operator  { color: #56b6c2 !important; }
+.editor-container .milkdown .cm-punctuation { color: #abb2bf !important; }
+.editor-container .milkdown .cm-variableName { color: #e06c75 !important; }
+.editor-container .milkdown .cm-typeName  { color: #e5c07b !important; }
+.editor-container .milkdown .cm-propertyName { color: #61afef !important; }
+.editor-container .milkdown .cm-bool      { color: #d19a66 !important; }
+/* 라이트 테마: 배경이 밝으므로 코드 배경도 구분되게 */
+[data-theme='light'] .editor-container .milkdown .cm-editor,
+[data-theme='light'] .editor-container .milkdown .cm-scroller {
+  background-color: var(--code-bg, #F1F3F5) !important;
+}
+[data-theme='light'] .editor-container .milkdown .cm-content,
+[data-theme='light'] .editor-container .milkdown .cm-line {
+  color: var(--code-text, #5B21B6) !important;
+}
+[data-theme='light'] .editor-container .milkdown .cm-keyword   { color: #7c3aed !important; }
+[data-theme='light'] .editor-container .milkdown .cm-string    { color: #16a34a !important; }
+[data-theme='light'] .editor-container .milkdown .cm-number    { color: #ea580c !important; }
+[data-theme='light'] .editor-container .milkdown .cm-comment   { color: #6b7280 !important; font-style: italic; }
+[data-theme='light'] .editor-container .milkdown .cm-operator  { color: #0891b2 !important; }
+[data-theme='light'] .editor-container .milkdown .cm-variableName { color: #dc2626 !important; }
+[data-theme='light'] .editor-container .milkdown .cm-typeName  { color: #d97706 !important; }
+[data-theme='light'] .editor-container .milkdown .cm-propertyName { color: #2563eb !important; }
+/* 다크 테마: 배경 확실히 어둡게 */
+[data-theme='dark'] .editor-container .milkdown .cm-editor,
+[data-theme='dark'] .editor-container .milkdown .cm-scroller {
+  background-color: var(--code-bg, #11111B) !important;
+}
+[data-theme='dark'] .editor-container .milkdown .cm-content,
+[data-theme='dark'] .editor-container .milkdown .cm-line {
+  color: var(--code-text, #F5C2E7) !important;
+}
+[data-theme='dark'] .editor-container .milkdown .cm-gutters {
+  background-color: var(--code-bg, #11111B) !important;
+  color: #6c7086 !important;
+  border-right: 1px solid #313244 !important;
 }
 
 /* Force colors on specific Crepe elements to prevent light mode leak */
