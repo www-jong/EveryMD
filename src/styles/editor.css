@@ -128,19 +128,35 @@
 }
 
 /* ── 라이트 테마 코드 색상 ── */
+/* Crepe 테마 색상 변수를 코드 특화된 회색계열로 */
+[data-theme='light'] {
+  --crepe-color-surface: #EAECEF;      /* 코드블록 외경: 채도 낙충 회색 */
+  --crepe-color-surface-low: #DEE1E6;  /* 안쪽 활성 줄: 조금 더 진하게 */
+}
 [data-theme='light'] .editor-container .milkdown code,
 [data-theme='light'] .editor-container .milkdown pre code {
   color: var(--code-text, #5B21B6) !important;
 }
 [data-theme='light'] .editor-container .milkdown pre {
-  background-color: var(--code-bg, #F1F3F5) !important;
-  border-color: var(--border-color, #E9ECEF) !important;
+  background-color: var(--code-bg, #EAECEF) !important;
+  border-color: var(--border-color, #CDD0D5) !important;
+}
+/* 라이트: milkdown-code-block 자체 배경도 통일 */
+[data-theme='light'] .editor-container .milkdown .milkdown-code-block {
+  background: #EAECEF !important;
+  border: 1px solid #CDD0D5 !important;
+}
+[data-theme='light'] .editor-container .milkdown .milkdown-code-block .cm-editor,
+[data-theme='light'] .editor-container .milkdown .milkdown-code-block .cm-gutters,
+[data-theme='light'] .editor-container .milkdown .milkdown-code-block .cm-panel {
+  background: #EAECEF !important;
 }
 
 /* ── 다크 테마 코드 색상 ── */
 [data-theme='dark'] {
   --crepe-color-background: #1e1e2e;
-  --crepe-color-surface: #181825;
+  --crepe-color-surface: #181825;     /* 코드블록 배경 */
+  --crepe-color-surface-low: #11111B; /* 안쪽 더 어두게 */
   --crepe-color-on-background: #cdd6f4;
   --crepe-color-on-surface: #a6adc8;
   --crepe-color-primary: #b4befe;
@@ -153,6 +169,17 @@
 [data-theme='dark'] .editor-container .milkdown pre {
   background-color: var(--code-bg, #11111B) !important;
   border-color: var(--border-color, #313244) !important;
+}
+/* 다크: milkdown-code-block 외경과 내부 전체 어둑게 */
+[data-theme='dark'] .editor-container .milkdown .milkdown-code-block {
+  background: #181825 !important;
+  border: 1px solid #313244 !important;
+}
+[data-theme='dark'] .editor-container .milkdown .milkdown-code-block .cm-editor,
+[data-theme='dark'] .editor-container .milkdown .milkdown-code-block .cm-gutters,
+[data-theme='dark'] .editor-container .milkdown .milkdown-code-block .cm-panel {
+  background: #181825 !important;
+  border-color: #313244 !important;
 }
 
 /* ── Crepe 블록 핸들(행 설정창): 텍스트 영역 바깥 좌측 여백에 고정 ── */
