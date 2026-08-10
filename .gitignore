@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Tauri / Rust 빌드 결과물 (로컬 테스트용, git 제외)
+src-tauri/target/
