@@ -43,6 +43,22 @@ npm run tauri build
 - Rust toolchain (rustup)
 - Windows 10+ (WebView2) / macOS 10.15+
 
+## 설치
+
+[Releases](https://github.com/www-jong/EveryMD/releases) 페이지에서 플랫폼에 맞는 파일을 다운로드하세요.
+
+### macOS 설치 시 주의사항
+
+Apple Developer 서명이 없는 오픈소스 앱이므로, macOS Gatekeeper가 "손상된 파일" 또는 "확인할 수 없는 개발자" 오류를 표시할 수 있습니다.
+
+**해결 방법 (터미널):**
+```bash
+xattr -cr /Applications/EveryMD.app
+```
+
+**또는 시스템 설정에서:**  
+시스템 설정 → 개인 정보 보호 및 보안 → "확인 없이 열기"
+
 ## 라이선스
 
 MIT
