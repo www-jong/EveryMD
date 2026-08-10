@@ -27,30 +27,8 @@ jobs:
           # CHANGELOG.md에서 해당 버전 섹션만 추출
           awk "/^## \[$VERSION\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md \
             > release_notes.txt
-
-          # macOS Gatekeeper 우회 안내 추가
-          cat >> release_notes.txt << 'MACOS_NOTE'
-
----
-
-## ⚠️ macOS 설치 시 주의사항
-
-macOS에서 "**손상된 파일**" 또는 "**확인할 수 없는 개발자**" 오류가 발생할 경우, 아래 방법 중 하나를 사용하세요.
-
-### 방법 1 — 터미널 명령어 (권장)
-```bash
-xattr -cr /Applications/EveryMD.app
-```
-DMG에서 `/Applications`로 복사한 뒤 위 명령어를 실행하면 됩니다.
-
-### 방법 2 — 시스템 설정에서 허용
-1. 앱을 한 번 실행 (오류 발생해도 괜찮음)
-2. **시스템 설정 → 개인 정보 보호 및 보안 → "확인 없이 열기"** 클릭
-
-> 이 앱은 Apple Developer Program에 등록되지 않은 오픈소스 앱으로, 코드 서명이 없습니다.
-> 위 방법은 macOS의 Gatekeeper 격리 속성을 제거하는 안전한 방법입니다.
-MACOS_NOTE
-
+          # macOS Gatekeeper 우회 안내 추가 (별도 파일로 분리 — YAML 백틱 충돌 방지)
+          cat .github/macos-note.md >> release_notes.txt
           echo "--- 추출된 릴리즈 노트 ---"
           cat release_notes.txt
 
@@ -109,20 +87,10 @@ MACOS_NOTE
       - name: Install frontend dependencies
         run: npm ci
 
-      # macOS: ad-hoc 서명으로 "손상된 파일" 오류 완화
-      # (Apple Developer 계정 없이도 기본 실행 가능하게)
-      - name: macOS ad-hoc codesign setup
-        if: matrix.platform == 'macos-latest'
-        run: |
-          # APPLE_SIGNING_IDENTITY가 없을 때 ad-hoc(-) 서명 사용
-          echo "APPLE_SIGNING_IDENTITY=-" >> $GITHUB_ENV
-
       - name: Build Tauri app & upload artifacts
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS ad-hoc signing (개발자 계정 없이 기본 서명)
-          APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY || '' }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
