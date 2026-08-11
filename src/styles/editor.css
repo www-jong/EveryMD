@@ -83,6 +83,8 @@
   font-family: var(--font-mono, 'JetBrains Mono', 'Source Code Pro', monospace);
   font-size: 0.9em;
   color: var(--code-text) !important;
+  /* 백틱 인라인 코드 안 커서 가시성: 목록·표 안에서도 보이게 */
+  caret-color: var(--text-primary) !important;
 }
 
 .editor-container .milkdown pre code {
@@ -399,5 +401,32 @@ div[data-role="balloon"] button {
   box-shadow: none !important;
 }
 
+/* ── 표(Table) 셀 선택 시 텍스트 투명 버그 수정 ── */
+/* ProseMirror .selectedCell이 배경을 씌울 때 텍스트·커서가 보이지 않는 문제 */
+.editor-container .milkdown .selectedCell {
+  background-color: rgba(99, 102, 241, 0.18) !important;
+  position: relative;
+}
+.editor-container .milkdown .selectedCell,
+.editor-container .milkdown .selectedCell p,
+.editor-container .milkdown .selectedCell span,
+.editor-container .milkdown .selectedCell code {
+  color: var(--text-primary) !important;
+  caret-color: var(--text-primary) !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+}
+/* 선택 셀 안 ::selection 하이라이트도 텍스트 보이게 */
+.editor-container .milkdown .selectedCell ::selection {
+  color: var(--text-primary) !important;
+  background-color: rgba(99, 102, 241, 0.35) !important;
+}
 
-
+/* ── 목록(li) 안 인라인 코드 커서 가시성 ── */
+.editor-container .milkdown li code {
+  caret-color: var(--text-primary) !important;
+}
+/* 목록 안 ::selection */
+.editor-container .milkdown li ::selection {
+  color: var(--text-primary) !important;
+  background-color: rgba(99, 102, 241, 0.25) !important;
+}
