@@ -402,23 +402,19 @@ div[data-role="balloon"] button {
 }
 
 /* ── 표(Table) 셀 선택 시 텍스트 투명 버그 수정 ── */
-/* ProseMirror .selectedCell이 배경을 씌울 때 텍스트·커서가 보이지 않는 문제 */
+/* ProseMirror 기본 동작: .selectedCell::after 로 반투명 오버레이를 텍스트 위에 씌움 */
+/* → 배경색과 글자색이 섞여 안 보이는 문제 발생                                       */
+/* 해결: 오버레이 완전 제거 + 테두리만 강조 (텍스트 절대 건드리지 않음)                */
+.editor-container .milkdown .selectedCell::after {
+  display: none !important;
+}
 .editor-container .milkdown .selectedCell {
-  background-color: rgba(99, 102, 241, 0.18) !important;
-  position: relative;
-}
-.editor-container .milkdown .selectedCell,
-.editor-container .milkdown .selectedCell p,
-.editor-container .milkdown .selectedCell span,
-.editor-container .milkdown .selectedCell code {
-  color: var(--text-primary) !important;
-  caret-color: var(--text-primary) !important;
-  -webkit-text-fill-color: var(--text-primary) !important;
-}
-/* 선택 셀 안 ::selection 하이라이트도 텍스트 보이게 */
-.editor-container .milkdown .selectedCell ::selection {
-  color: var(--text-primary) !important;
-  background-color: rgba(99, 102, 241, 0.35) !important;
+  outline: 2px solid var(--accent-color) !important;
+  outline-offset: -2px;
+  /* 배경·텍스트는 원래 값 유지 */
+  background-color: inherit !important;
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
 }
 
 /* ── 목록(li) 안 인라인 코드 커서 가시성 ── */
