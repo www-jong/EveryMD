@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { TitleBar } from './components/TitleBar/TitleBar';
 import { MenuBar } from './components/MenuBar/MenuBar';
 import { TabBar } from './components/TabBar/TabBar';
@@ -10,7 +11,7 @@ import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
 import { useFileStore } from './stores/fileStore';
 import { useSettingsStore } from './stores/settingsStore';
-import { readFile, writeFile, baseName } from './utils/fileSystem';
+import { readFile, writeFile, isTauri, baseName, SUPPORTED_EXTENSIONS } from './utils/fileSystem';
 
 const App: React.FC = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
@@ -92,10 +93,61 @@ const App: React.FC = () => {
     };
   }, [activeTab?.content, autoSave, autoSaveDelay]);
 
-  // 드래그 앤 드롭 상태
+  // ─── 드래그 앤 드롭 ─────────────────────────────────────────────────────────
   const [isDragOver, setIsDragOver] = useState(false);
+  const [dragCount, setDragCount] = useState(0);
 
+  // Tauri 환경: OS 네이티브 드래그앤드롭 이벤트 사용 (실제 파일 경로 획득)
+  useEffect(() => {
+    if (!isTauri()) return;
+
+    const extPattern = new RegExp(`\\.(${SUPPORTED_EXTENSIONS.join('|')})$`, 'i');
+    let disposed = false;
+    let unlisten: (() => void) | null = null;
+
+    getCurrentWebview()
+      .onDragDropEvent((event) => {
+        const payload = event.payload;
+        if (payload.type === 'enter') {
+          setDragCount(payload.paths.filter((p) => extPattern.test(p)).length);
+          setIsDragOver(true);
+        } else if (payload.type === 'over') {
+          setIsDragOver(true);
+        } else if (payload.type === 'leave') {
+          setIsDragOver(false);
+          setDragCount(0);
+        } else if (payload.type === 'drop') {
+          setIsDragOver(false);
+          setDragCount(0);
+
+          payload.paths
+            .filter((p) => extPattern.test(p))
+            .forEach((p) => {
+              readFile(p)
+                .then((content) => openFile(p, content, baseName(p)))
+                .catch((err) => console.error('드롭 파일 열기 실패:', err));
+            });
+
+          const skipped = payload.paths.length - payload.paths.filter((p) => extPattern.test(p)).length;
+          if (skipped > 0) {
+            alert('.md, .txt, .markdown 파일만 열 수 있습니다. 지원하지 않는 파일은 건너뛰었습니다.');
+          }
+        }
+      })
+      .then((fn) => {
+        if (disposed) fn();
+        else unlisten = fn;
+      });
+
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [openFile]);
+
+  // 브라우저 데모 모드용 HTML5 폴백 (Tauri에서는 네이티브 핸들러가 처리)
   const handleDragOver = (e: React.DragEvent) => {
+    if (isTauri()) return;
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer.types.includes('Files')) {
@@ -104,6 +156,7 @@ const App: React.FC = () => {
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
+    if (isTauri()) return;
     // 자식 요소로 이동 시 오발 방지
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
@@ -111,6 +164,7 @@ const App: React.FC = () => {
   };
 
   const handleDrop = async (e: React.DragEvent) => {
+    if (isTauri()) return; // Tauri에서는 네이티브 onDragDropEvent가 담당
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
@@ -124,20 +178,13 @@ const App: React.FC = () => {
     }
 
     for (const file of supported) {
-      // 웹븷에서는 file.path가 타우리에서만 존재. 브라우저 API로 fallback
-      const filePath: string = (file as any).path || file.name;
-      try {
-        const content = await readFile(filePath);
-        openFile(filePath, content, file.name);
-      } catch (err) {
-        // path가 없으면 FileReader로 콘텐츠 읽기 (fallback)
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const content = ev.target?.result as string || '';
-          openFile(file.name, content, file.name);
-        };
-        reader.readAsText(file, 'utf-8');
-      }
+      // 브라우저에서는 FileReader로 직접 읽기 (file.path는 존재하지 않음)
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const content = ev.target?.result as string || '';
+        openFile(file.name, content, file.name);
+      };
+      reader.readAsText(file, 'utf-8');
     }
   };
 
@@ -192,7 +239,7 @@ const App: React.FC = () => {
                 background: 'var(--bg-main)', padding: '12px 24px', borderRadius: '8px',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
               }}>
-                파일을 놓아 바로 열기 파일 (.md / .txt)
+                파일 {dragCount > 1 ? `${dragCount}개` : ''}를 놓아 바로 열기 (.md / .txt)
               </div>
             </div>
           )}
