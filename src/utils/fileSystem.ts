@@ -7,6 +7,14 @@ export const isTauri = (): boolean => {
   return typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined;
 };
 
+// 크로스플랫폼 경로에서 파일명 추출 (/ 와 \ 모두 처리)
+export const baseName = (path: string): string => {
+  return path.substring(path.lastIndexOf(path.includes('/') ? '/' : '\\') + 1);
+};
+
+// 지원하는 마크다운/텍스트 확장자 목록 (열기 다이얼로그, 드래그앤드롭 공통)
+export const SUPPORTED_EXTENSIONS = ['md', 'markdown', 'txt'];
+
 export const openFileDialog = async (): Promise<string | null> => {
   if (!isTauri()) {
     console.warn('Tauri API는 Tauri 앱 내부에서만 작동합니다. 브라우저 가상 열기를 시도합니다.');
@@ -16,7 +24,7 @@ export const openFileDialog = async (): Promise<string | null> => {
   try {
     const selected = await open({
       multiple: false,
-      filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }],
+      filters: [{ name: 'Markdown / Text', extensions: SUPPORTED_EXTENSIONS }],
     });
     return selected ?? null;
   } catch (error) {
