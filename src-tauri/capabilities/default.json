@@ -10,6 +10,7 @@
     "core:window:allow-unmaximize",
     "core:window:allow-is-maximized",
     "core:window:allow-close",
+    "core:window:allow-destroy",
     "core:window:allow-start-dragging",
     "core:window:allow-create",
     "core:webview:allow-create-webview-window",

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { TitleBar } from './components/TitleBar/TitleBar';
 import { MenuBar } from './components/MenuBar/MenuBar';
 import { TabBar } from './components/TabBar/TabBar';
@@ -91,7 +92,56 @@ const App: React.FC = () => {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [activeTab?.content, autoSave, autoSaveDelay]);
+  }, [activeTab?.content, activeTab?.id, autoSave, autoSaveDelay, markSaved]);
+
+  // 탭 전환/창 닫기 시 대기 중이던 자동저장을 즉시 플러시
+  // (cleanup은 deps 변경 전의 값을 클로저로 가지므로 "이전 탭" 기준으로 저장됨)
+  useEffect(() => {
+    const tabOnMount = useFileStore.getState().tabs.find((t) => t.id === activeTabId) || null;
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+      if (!useSettingsStore.getState().autoSave || !tabOnMount?.isDirty || !tabOnMount.filePath) return;
+      const latest = useFileStore.getState().tabs.find((t) => t.id === tabOnMount.id);
+      if (!latest?.isDirty || !latest.filePath) return;
+      writeFile(latest.filePath, latest.content)
+        .then(() => useFileStore.getState().markSaved(latest.id, latest.filePath!))
+        .catch((err) => console.error('자동저장 플러시 실패:', err));
+    };
+  }, [activeTabId]);
+
+  // 창 닫기 시 미저장 변경사항 경고 (타이틀바 X, OS 닫기, Alt+F4 모두 인터셉트)
+  useEffect(() => {
+    if (!isTauri()) return;
+
+    let disposed = false;
+    let unlisten: (() => void) | null = null;
+
+    getCurrentWindow()
+      .onCloseRequested(async (event) => {
+        const hasDirty = useFileStore.getState().tabs.some((t) => t.isDirty);
+        if (!hasDirty) return;
+
+        event.preventDefault();
+        const confirmed = window.confirm(
+          '저장되지 않은 변경사항이 있습니다.\n그래도 창을 닫으시겠습니까?'
+        );
+        if (confirmed) {
+          await getCurrentWindow().destroy();
+        }
+      })
+      .then((fn) => {
+        if (disposed) fn();
+        else unlisten = fn;
+      });
+
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, []);
 
   // ─── 드래그 앤 드롭 ─────────────────────────────────────────────────────────
   const [isDragOver, setIsDragOver] = useState(false);
