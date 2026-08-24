@@ -18,16 +18,23 @@ interface FileState {
   markSaved: (id: string, filePath: string) => void;
   renameTabTitle: (id: string, newTitle: string) => void;
   retargetTabPath: (oldPath: string, newPath: string) => void;
+  hydrateTab: (id: string, content: string) => void;
   setOpenFolderPath: (path: string | null) => void;
   triggerRefresh: () => void;
   getActiveTab: () => Tab | null;
 }
 
 // 로컬스토리지 백업 동기화 헬퍼
+// 디스크 파일은 내용을 저장하지 않고 경로만 저장(재시작 시 디스크에서 복원),
+// 미저장(untitled) 탭만 내용을 포함 — 매 키 입력마다 대용량 직렬화 방지
 const persistWorkspaceState = (tabs: Tab[], activeTabId: string | null) => {
-  // 저장 중 무의미하게 거대한 파일 데이터가 남는 것을 방지하되 이전 탭 상태와 경로 정보 복원을 위해 직렬화
-  localStorage.setItem('everymd-workspace-tabs', JSON.stringify(tabs));
-  localStorage.setItem('everymd-workspace-active-tab-id', activeTabId || '');
+  const lightweight = tabs.map((t) => (t.filePath ? { ...t, content: '' } : t));
+  try {
+    localStorage.setItem('everymd-workspace-tabs', JSON.stringify(lightweight));
+    localStorage.setItem('everymd-workspace-active-tab-id', activeTabId || '');
+  } catch (e) {
+    console.warn('워크스페이스 상태 저장 실패 (저장 용량 초과):', e);
+  }
 };
 
 export const useFileStore = create<FileState>((set, get) => {
@@ -184,6 +191,14 @@ export const useFileStore = create<FileState>((set, get) => {
       );
       set({ tabs: updatedTabs });
       persistWorkspaceState(updatedTabs, get().activeTabId);
+    },
+
+    // 재시작 후 디스크 파일 내용 복원 (dirty 상태가 아닌 빈 탭에만 적용해 사용자 편집 보호)
+    hydrateTab: (id, content) => {
+      const updatedTabs = get().tabs.map((tab) =>
+        tab.id === id && !tab.isDirty && tab.content === '' ? { ...tab, content } : tab
+      );
+      set({ tabs: updatedTabs });
     },
 
     renameTabTitle: (id, newTitle) => {

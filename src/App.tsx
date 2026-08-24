@@ -10,7 +10,7 @@ import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
 import { useFileStore } from './stores/fileStore';
 import { useSettingsStore } from './stores/settingsStore';
-import { readFile, writeFile } from './utils/fileSystem';
+import { readFile, writeFile, baseName } from './utils/fileSystem';
 
 const App: React.FC = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
@@ -26,13 +26,28 @@ const App: React.FC = () => {
   const activeTab = tabs.find((t) => t.id === activeTabId) || null;
   const { isSettingsOpen, setSettingsOpen, wordWrap } = useSettingsStore();
 
+  // 재시작 시 복원된 탭 중 디스크 파일의 내용이 비어 있는 것들을 읽어 채움
+  useEffect(() => {
+    const { tabs: restored, hydrateTab: hydrate } = useFileStore.getState();
+    restored
+      .filter((t) => t.filePath && !t.content)
+      .forEach((t) => {
+        readFile(t.filePath!)
+          .then((content) => hydrate(t.id, content))
+          .catch(() => {
+            // 파일이 삭제되었거나 접근 불가한 경우 빈 문서로 유지
+          });
+      });
+    // 마운트 시 1회만 실행
+  }, []);
+
   // URL 쿼리 파라미터 감지하여 새 창 독립 실행 시 지정된 파일 자동 오픈
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const openFilePath = params.get('openFile');
     if (openFilePath) {
       // 쿼리에 오픈할 파일명이 전달된 경우 즉시 읽어서 탭에 마운트
-      const fileName = openFilePath.substring(openFilePath.lastIndexOf(openFilePath.includes('/') ? '/' : '\\') + 1);
+      const fileName = baseName(openFilePath);
       readFile(openFilePath)
         .then((content) => {
           openFile(openFilePath, content, fileName);
@@ -76,13 +91,6 @@ const App: React.FC = () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
   }, [activeTab?.content, autoSave, autoSaveDelay]);
-
-  // ─── 타이틀바에 현재 파일명 반영 ─────────────────────────────────────────
-  useEffect(() => {
-    const fileName = activeTab?.title || 'EveryMD';
-    const dirty = activeTab?.isDirty ? '● ' : '';
-    document.title = `${dirty}${fileName} — EveryMD`;
-  }, [activeTab?.title, activeTab?.isDirty]);
 
   // 드래그 앤 드롭 상태
   const [isDragOver, setIsDragOver] = useState(false);
@@ -132,6 +140,13 @@ const App: React.FC = () => {
       }
     }
   };
+
+  // ─── 타이틀바에 현재 파일명 반영 ─────────────────────────────────────────
+  useEffect(() => {
+    const fileName = activeTab?.title || 'EveryMD';
+    const dirty = activeTab?.isDirty ? '● ' : '';
+    document.title = `${dirty}${fileName} — EveryMD`;
+  }, [activeTab?.title, activeTab?.isDirty]);
 
   return (
     <>
