@@ -1,4 +1,4 @@
-import React, { useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Crepe } from '@milkdown/crepe';
 import { MilkdownProvider, Milkdown, useEditor } from '@milkdown/react';
 import { EditorToolbar } from './EditorToolbar';
@@ -139,8 +139,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   content,
   onChange,
 }) => {
-  const { fontSize, setFontSize } = useSettingsStore();
+  const setFontSize = useSettingsStore((state) => state.setFontSize);
   const editorInnerRef = useRef<EditorInnerHandle>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // ── 인라인 마크다운 삽입 (굵게, 기울임, 링크 등) ───────────
   const handleInsertMarkdown = (prefix: string, suffix: string = '') => {
@@ -174,17 +175,28 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   };
 
   // Ctrl+스크롤로 에디터 배율(폰트 크기) 조절
-  // CodeMirror 코드블록 위에서는 가로채지 않음 (CM이 자체 핸들링)
-  const handleWheel = (e: React.WheelEvent) => {
-    if (!e.ctrlKey) return;
-    const target = e.target as HTMLElement;
-    if (target.closest('.cm-editor') || target.closest('.cm-scroller')) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const delta = e.deltaY > 0 ? -1 : 1;
-    const newSize = Math.min(32, Math.max(12, fontSize + delta));
-    if (newSize !== fontSize) setFontSize(newSize);
-  };
+  // React onWheel은 passive로 등록되어 preventDefault가 무시되므로
+  // 네이티브 리스너({passive:false})를 직접 등록해야 기본 페이지 줌이 막힘
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      const target = e.target as HTMLElement;
+      // CodeMirror 코드블록 위에서는 가로채지 않음 (CM이 자체 핸들링)
+      if (target.closest('.cm-editor') || target.closest('.cm-scroller')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const current = useSettingsStore.getState().fontSize;
+      const delta = e.deltaY > 0 ? -1 : 1;
+      const newSize = Math.min(32, Math.max(12, current + delta));
+      if (newSize !== current) setFontSize(newSize);
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [setFontSize]);
 
   // 에디터 빈 영역 클릭 시 포커스 유입
   // CodeMirror 코드블록 내부 클릭은 절대 가로채지 않음 (입력 불가 버그 방지)
@@ -235,7 +247,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         onInsertCodeBlock={() => editorInnerRef.current?.insertCodeBlock()}
       />
 
-      <div className="editor-container" onClick={handleContainerClick} onWheel={handleWheel}>
+      <div ref={containerRef} className="editor-container" onClick={handleContainerClick}>
         <MilkdownProvider>
           <EditorInner ref={editorInnerRef} content={content} onChange={onChange} />
         </MilkdownProvider>
