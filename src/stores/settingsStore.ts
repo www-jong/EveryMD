@@ -179,12 +179,23 @@ export const applyThemeColors = (colors: ThemeColors) => {
   });
 };
 
+// 손상된 localStorage 값으로 인한 시작 크래시 방지용 안전 파서
+const safeJsonParse = <T,>(raw: string | null, fallback: T): T => {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch (e) {
+    console.warn('저장된 설정 데이터를 파싱할 수 없어 기본값으로 복원합니다:', e);
+    return fallback;
+  }
+};
+
 export const useSettingsStore = create<SettingsState>((set, get) => {
   // 로컬스토리지 저장 데이터 복원
   const savedActiveThemeId = localStorage.getItem('everymd-active-theme-id') || 'dark';
-  const savedCustomThemes = JSON.parse(localStorage.getItem('everymd-custom-themes') || '[]');
+  const savedCustomThemes = safeJsonParse<CustomTheme[]>(localStorage.getItem('everymd-custom-themes'), []);
   // 저장된 단축키 로드 + 마이그레이션 (ctrl+b → ctrl+\\ 변경으로 인한 호환성 처리)
-  const savedShortcuts = JSON.parse(localStorage.getItem('everymd-shortcuts') || 'null');
+  const savedShortcuts = safeJsonParse<ShortcutMap | null>(localStorage.getItem('everymd-shortcuts'), null);
   let migratedShortcuts: ShortcutMap = savedShortcuts
     ? { ...DEFAULT_SHORTCUTS, ...savedShortcuts }
     : { ...DEFAULT_SHORTCUTS };
@@ -228,8 +239,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     
     setTheme: (theme) => {
       document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('everymd-theme', theme);
-      
       const themeId = theme === 'light' ? 'light' : 'dark';
       get().setActiveThemeId(themeId);
     },
