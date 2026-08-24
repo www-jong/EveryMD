@@ -97,6 +97,7 @@ export const FileExplorer: React.FC = () => {
   const setOpenFolderPath = useFileStore((state) => state.setOpenFolderPath);
   const refreshTrigger = useFileStore((state) => state.refreshTrigger);
   const triggerRefresh = useFileStore((state) => state.triggerRefresh);
+  const retargetTabPath = useFileStore((state) => state.retargetTabPath);
 
   const loadRoot = useCallback(async () => {
     if (openFolderPath) {
@@ -181,8 +182,10 @@ export const FileExplorer: React.FC = () => {
       const newPath = parentPath + sep + newName.trim();
       
       await renameFile(entry.path, newPath);
+      // 열려 있는 탭이 이 파일을 가리키고 있다면 경로/제목 갱신 (옛 경로로 재저장 방지)
+      retargetTabPath(entry.path, newPath);
       // 파일 시스템 처리 완료 후 즉각 갱신
-      setTimeout(() => triggerRefresh(), 80);
+      triggerRefresh();
     } catch (err) {
       console.error('이름 변경 실패:', err);
       alert('이름을 변경할 수 없습니다.');

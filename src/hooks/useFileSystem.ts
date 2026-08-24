@@ -84,6 +84,11 @@ export const useFileSystem = () => {
         const parentPath = pathParts.join(sep);
         const newPath = parentPath + sep + newTitle;
 
+        // 이름 변경 전 미저장 편집 내용을 먼저 디스크에 반영 (내용 유실 방지)
+        if (tab.isDirty) {
+          await writeFile(tab.filePath, tab.content);
+        }
+
         await renameFile(tab.filePath, newPath);
         // 디스크 변경 완료 후 스토어 상태 변경
         renameTabTitle(tabId, newTitle);

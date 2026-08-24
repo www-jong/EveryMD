@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Tab } from '../types';
+import { baseName } from '../utils/fileSystem';
 
 interface FileState {
   tabs: Tab[];
@@ -16,6 +17,7 @@ interface FileState {
   updateContent: (id: string, content: string) => void;
   markSaved: (id: string, filePath: string) => void;
   renameTabTitle: (id: string, newTitle: string) => void;
+  retargetTabPath: (oldPath: string, newPath: string) => void;
   setOpenFolderPath: (path: string | null) => void;
   triggerRefresh: () => void;
   getActiveTab: () => Tab | null;
@@ -91,7 +93,7 @@ export const useFileStore = create<FileState>((set, get) => {
       const id = crypto.randomUUID();
       const newTab: Tab = {
         id,
-        title: title || filePath.substring(filePath.lastIndexOf(filePath.includes('/') ? '/' : '\\') + 1),
+        title: title || baseName(filePath),
         filePath,
         content,
         isDirty: false,
@@ -163,13 +165,23 @@ export const useFileStore = create<FileState>((set, get) => {
     },
 
     markSaved: (id, filePath) => {
-      const title = filePath.substring(filePath.lastIndexOf(filePath.includes('/') ? '/' : '\\') + 1);
+      const title = baseName(filePath);
       const updatedTabs = get().tabs.map((tab) => {
         if (tab.id === id) {
           return { ...tab, filePath, title, isDirty: false };
         }
         return tab;
       });
+      set({ tabs: updatedTabs });
+      persistWorkspaceState(updatedTabs, get().activeTabId);
+    },
+
+    // 디스크에서 파일명이 변경된 경우 열려 있는 탭의 경로/제목을 함께 갱신
+    retargetTabPath: (oldPath, newPath) => {
+      const title = baseName(newPath);
+      const updatedTabs = get().tabs.map((tab) =>
+        tab.filePath === oldPath ? { ...tab, filePath: newPath, title } : tab
+      );
       set({ tabs: updatedTabs });
       persistWorkspaceState(updatedTabs, get().activeTabId);
     },
