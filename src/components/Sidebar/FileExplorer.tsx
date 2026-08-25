@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { openFolderDialog, readDirectory, readFile, renameFile, duplicateFile, isTauri } from '../../utils/fileSystem';
+import { openFolderDialog, readDirectory, readFile, renameFile, duplicateFile, isTauri, SUPPORTED_EXTENSIONS } from '../../utils/fileSystem';
 import { useFileStore } from '../../stores/fileStore';
 import { FileEntry } from '../../types';
 import './FileExplorer.css';
@@ -148,7 +148,7 @@ export const FileExplorer: React.FC = () => {
   };
 
   const handleFileClick = useCallback(async (entry: FileEntry) => {
-    if (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')) {
+    if (SUPPORTED_EXTENSIONS.some((ext) => entry.name.toLowerCase().endsWith('.' + ext))) {
       try {
         const content = await readFile(entry.path);
         openFile(entry.path, content, entry.name);
