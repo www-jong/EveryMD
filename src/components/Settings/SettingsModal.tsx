@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSettingsStore, CustomTheme, THEME_PRESETS, ThemeColors, applyThemeColors } from '../../stores/settingsStore';
+import { UpdateSection } from './UpdateSection';
 import './SettingsModal.css';
 
 interface SettingsModalProps {
@@ -348,6 +349,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   </div>
                 </div>
               )}
+
+              <div className="settings-divider" />
+
+              {/* 앱 업데이트 */}
+              <UpdateSection />
             </div>
           )}
 

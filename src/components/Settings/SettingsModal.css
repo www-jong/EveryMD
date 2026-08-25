@@ -124,6 +124,12 @@
   border-bottom: none;
 }
 
+.settings-divider {
+  height: 1px;
+  margin: 14px -24px;
+  background-color: var(--border-color);
+}
+
 .setting-row.indent {
   padding-left: 20px;
   background-color: var(--bg-sidebar);
