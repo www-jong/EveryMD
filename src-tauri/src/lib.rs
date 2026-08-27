@@ -112,6 +112,7 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app_handle, event| {
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             if let RunEvent::Opened { urls } = event {
                 for url in urls {
                     if let Ok(file_path) = url.to_file_path() {
@@ -132,6 +133,8 @@ pub fn run() {
                     let _ = window.set_focus();
                 }
             }
+            #[cfg(not(any(target_os = "macos", target_os = "ios")))]
+            let _ = (app_handle, event);
         });
 }
 
