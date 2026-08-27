@@ -10,6 +10,7 @@ import { StatusBar } from './components/StatusBar/StatusBar';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
+import { useFileAssociation } from './hooks/useFileAssociation';
 import { useFileStore } from './stores/fileStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { readFile, writeFile, isTauri, baseName, SUPPORTED_EXTENSIONS } from './utils/fileSystem';
@@ -20,6 +21,7 @@ const App: React.FC = () => {
 
   useKeyboard({ onToggleSidebar: toggleSidebar });
   useTheme();
+  useFileAssociation();
   
   const tabs = useFileStore((state) => state.tabs);
   const activeTabId = useFileStore((state) => state.activeTabId);
