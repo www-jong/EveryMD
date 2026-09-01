@@ -25,3 +25,6 @@ dist-ssr
 
 # Tauri / Rust 빌드 결과물 (로컬 테스트용, git 제외)
 src-tauri/target/
+
+# AI Agent local rules & metadata
+.agents/
