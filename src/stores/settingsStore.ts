@@ -43,6 +43,7 @@ interface SettingsState {
   fontFamily: string;
   autoSave: boolean;
   autoSaveDelay: number;
+  saveOnBlur: boolean;  // 창 전환(Blur) 시 즉시 저장 여부
   wordWrap: boolean;
   isSettingsOpen: boolean;
   shortcuts: ShortcutMap;
@@ -57,6 +58,7 @@ interface SettingsState {
   setFontFamily: (family: string) => void;
   setAutoSave: (autoSave: boolean) => void;
   setAutoSaveDelay: (delay: number) => void;
+  setSaveOnBlur: (saveOnBlur: boolean) => void;
   setWordWrap: (wordWrap: boolean) => void;
   updateShortcut: (action: keyof ShortcutMap, keyCombination: string) => void;
   resetShortcuts: () => void;
@@ -229,6 +231,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     fontFamily: initialFontFamily,
     autoSave: localStorage.getItem('everymd-autoSave') === 'true',
     autoSaveDelay: Number(localStorage.getItem('everymd-autoSaveDelay')) || 2000,
+    saveOnBlur: localStorage.getItem('everymd-saveOnBlur') !== 'false', // 기본 true
     wordWrap: localStorage.getItem('everymd-wordWrap') !== 'false',
     isSettingsOpen: false,
     shortcuts: migratedShortcuts,
@@ -273,6 +276,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     setWordWrap: (wordWrap) => {
       localStorage.setItem('everymd-wordWrap', wordWrap.toString());
       set({ wordWrap });
+    },
+
+    setSaveOnBlur: (saveOnBlur) => {
+      localStorage.setItem('everymd-saveOnBlur', saveOnBlur.toString());
+      set({ saveOnBlur });
     },
 
     updateShortcut: (action, keyCombination) => {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useFileStore } from '../stores/fileStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { readFile, writeFile, isTauri } from '../utils/fileSystem';
 import { FileConflictInfo } from '../types';
 
@@ -75,6 +76,9 @@ export const useFileWatcher = () => {
 
   // 창 벗어남(Blur) 시 미저장된 디스크 파일들을 즉시 디스크에 자동 저장
   const saveDirtyTabsOnBlur = useCallback(async () => {
+    // saveOnBlur 설정이 꺼져 있으면 즉시 반환
+    if (!useSettingsStore.getState().saveOnBlur) return;
+
     const currentTabs = useFileStore.getState().tabs;
     for (const tab of currentTabs) {
       if (tab.filePath && tab.isDirty) {

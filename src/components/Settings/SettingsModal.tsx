@@ -17,6 +17,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     fontFamily,
     autoSave,
     autoSaveDelay,
+    saveOnBlur,
     wordWrap,
     shortcuts,
     customThemes,
@@ -25,6 +26,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     setFontFamily,
     setAutoSave,
     setAutoSaveDelay,
+    setSaveOnBlur,
     setWordWrap,
     updateShortcut,
     resetShortcuts,
@@ -350,6 +352,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   </div>
                 </div>
               )}
+
+              <div className="setting-row">
+                <div className="setting-info">
+                  <span className="setting-label">창 전환 시 즉시 저장 (Save on Blur)</span>
+                  <span className="setting-desc">
+                    다른 프로그램으로 전환할 때 수정 중인 파일을 즉시 디스크에 저장합니다.
+                    끄면 외부 편집 시 충돌 가능성이 높아집니다.
+                  </span>
+                </div>
+                <div className="setting-control">
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={saveOnBlur}
+                      onChange={(e) => setSaveOnBlur(e.target.checked)}
+                    />
+                    <span className="slider round"></span>
+                  </label>
+                </div>
+              </div>
 
               <div className="settings-divider" />
 
