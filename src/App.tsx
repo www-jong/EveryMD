@@ -16,12 +16,14 @@ import { useFileWatcher } from './hooks/useFileWatcher';
 import { useFileSystem } from './hooks/useFileSystem';
 import { useFileStore } from './stores/fileStore';
 import { useSettingsStore } from './stores/settingsStore';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { readFile, writeFile, isTauri, baseName, SUPPORTED_EXTENSIONS } from './utils/fileSystem';
 
 const App: React.FC = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const toggleSidebar = () => setSidebarVisible((v) => !v);
 
+  const { handleNew, handleOpen, handleSave, handleSaveAs, handleCloseTab } = useFileSystem();
   useKeyboard({ onToggleSidebar: toggleSidebar });
   useTheme();
   useFileAssociation();
@@ -32,7 +34,73 @@ const App: React.FC = () => {
   const openFile = useFileStore((state) => state.openFile);
   const updateContent = useFileStore((state) => state.updateContent);
   const activeTab = tabs.find((t) => t.id === activeTabId) || null;
-  const { isSettingsOpen, setSettingsOpen, wordWrap } = useSettingsStore();
+  const { isSettingsOpen, setSettingsOpen, wordWrap, toggleTheme, setFontSize } = useSettingsStore();
+
+  // macOS 네이티브 시스템 메뉴바 이벤트 구독
+  useEffect(() => {
+    if (!isTauri()) return;
+
+    let unlisten: (() => void) | null = null;
+    getCurrentWindow()
+      .listen<string>('menu-event', (event) => {
+        const actionId = event.payload;
+        switch (actionId) {
+          case 'settings':
+            setSettingsOpen(true);
+            break;
+          case 'new_file':
+            handleNew();
+            break;
+          case 'open_file':
+            handleOpen();
+            break;
+          case 'save_file':
+            handleSave();
+            break;
+          case 'save_as_file':
+            handleSaveAs();
+            break;
+          case 'close_tab': {
+            const curActiveId = useFileStore.getState().activeTabId;
+            if (curActiveId) handleCloseTab(curActiveId);
+            break;
+          }
+          case 'toggle_sidebar':
+            toggleSidebar();
+            break;
+          case 'toggle_theme':
+            toggleTheme();
+            break;
+          case 'zoom_in':
+            setFontSize(Math.min(32, useSettingsStore.getState().fontSize + 2));
+            break;
+          case 'zoom_out':
+            setFontSize(Math.max(12, useSettingsStore.getState().fontSize - 2));
+            break;
+          case 'zoom_reset':
+            setFontSize(16);
+            break;
+          case 'open_github':
+            openUrl('https://github.com/www-jong/EveryMD');
+            break;
+          case 'open_release_notes':
+            openUrl('https://github.com/www-jong/EveryMD/releases');
+            break;
+          default:
+            break;
+        }
+      })
+      .then((unsub) => {
+        unlisten = unsub;
+      })
+      .catch((err) => {
+        console.error('메뉴 이벤트 리스너 등록 실패:', err);
+      });
+
+    return () => {
+      unlisten?.();
+    };
+  }, [handleNew, handleOpen, handleSave, handleSaveAs, handleCloseTab, setSettingsOpen, toggleTheme, setFontSize]);
 
   // 재시작 시 복원된 탭 중 디스크 파일의 내용이 비어 있는 것들을 읽어 채움
   useEffect(() => {
@@ -244,7 +312,6 @@ const App: React.FC = () => {
     }
   };
 
-  const { handleSave, handleSaveAs } = useFileSystem();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {

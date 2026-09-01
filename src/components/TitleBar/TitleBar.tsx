@@ -1,10 +1,12 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useFileStore } from '../../stores/fileStore';
+import { isMacOS } from '../../utils/platform';
 import './TitleBar.css';
 
 export const TitleBar: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
+  const isMac = isMacOS();
 
   // 현재 활성 탭 제목 구독
   const tabs = useFileStore((state) => state.tabs);
@@ -80,7 +82,6 @@ export const TitleBar: React.FC = () => {
       } else {
         await win.maximize();
       }
-      // 상태 변경이 완료된 직후 상태 재점검 폴백 타이머 작동
       setTimeout(async () => {
         const realState = await win.isMaximized();
         setIsMaximized(realState);
@@ -99,7 +100,7 @@ export const TitleBar: React.FC = () => {
   }, []);
 
   return (
-    <div className={`titlebar ${isMaximized ? 'maximized' : ''}`}>
+    <div className={`titlebar ${isMaximized ? 'maximized' : ''} ${isMac ? 'is-mac' : ''}`} data-tauri-drag-region>
       {/* 타이틀바의 좌측 부분만 드래그 가능 영역으로 설정 */}
       <div className="titlebar-left" data-tauri-drag-region>
         <span className="titlebar-title" data-tauri-drag-region>EveryMD</span>
@@ -109,37 +110,39 @@ export const TitleBar: React.FC = () => {
           </span>
         )}
       </div>
-      <div className="titlebar-right">
-        {/* 최소화 */}
-        <div className="titlebar-button" onClick={handleMinimize} title="최소화">
-          <svg viewBox="0 0 10 1" width="10" height="1">
-            <rect width="10" height="1" fill="currentColor"/>
-          </svg>
-        </div>
 
-        {/* 최대화/창 복원 */}
-        <div className="titlebar-button" onClick={handleMaximize} title={isMaximized ? '이전 크기로 복원' : '최대화'}>
-          {isMaximized ? (
-            // 창 복원 아이콘 (겹친 사각형)
-            <svg viewBox="0 0 10 10" width="10" height="10">
-              <path d="M3,1 L9,1 L9,7 L8,7 L8,8 L2,8 L2,2 L3,2 Z" fill="none" stroke="currentColor" strokeWidth="1"/>
-              <rect x="1" y="3" width="6" height="6" fill="none" stroke="currentColor" strokeWidth="1"/>
+      {/* Windows 전용 창 제어 버튼 */}
+      {!isMac && (
+        <div className="titlebar-right">
+          {/* 최소화 */}
+          <div className="titlebar-button" onClick={handleMinimize} title="최소화">
+            <svg viewBox="0 0 10 1" width="10" height="1">
+              <rect width="10" height="1" fill="currentColor"/>
             </svg>
-          ) : (
-            // 최대화 아이콘 (단일 사각형)
-            <svg viewBox="0 0 10 10" width="10" height="10">
-              <rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" strokeWidth="1"/>
-            </svg>
-          )}
-        </div>
+          </div>
 
-        {/* 닫기 */}
-        <div className="titlebar-button close" onClick={handleClose} title="닫기">
-          <svg viewBox="0 0 10 10" width="10" height="10">
-            <path d="M 0 0 L 10 10 M 10 0 L 0 10" fill="none" stroke="currentColor" strokeWidth="1"/>
-          </svg>
+          {/* 최대화/창 복원 */}
+          <div className="titlebar-button" onClick={handleMaximize} title={isMaximized ? '이전 크기로 복원' : '최대화'}>
+            {isMaximized ? (
+              <svg viewBox="0 0 10 10" width="10" height="10">
+                <path d="M3,1 L9,1 L9,7 L8,7 L8,8 L2,8 L2,2 L3,2 Z" fill="none" stroke="currentColor" strokeWidth="1"/>
+                <rect x="1" y="3" width="6" height="6" fill="none" stroke="currentColor" strokeWidth="1"/>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 10 10" width="10" height="10">
+                <rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" strokeWidth="1"/>
+              </svg>
+            )}
+          </div>
+
+          {/* 닫기 */}
+          <div className="titlebar-button close" onClick={handleClose} title="닫기">
+            <svg viewBox="0 0 10 10" width="10" height="10">
+              <path d="M 0 0 L 10 10 M 10 0 L 0 10" fill="none" stroke="currentColor" strokeWidth="1"/>
+            </svg>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

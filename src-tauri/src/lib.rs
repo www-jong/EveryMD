@@ -76,6 +76,118 @@ fn read_dir_entries(path: &str) -> Result<Vec<FileEntry>, String> {
     Ok(result)
 }
 
+#[cfg(target_os = "macos")]
+fn setup_macos_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder, PredefinedMenuItem};
+    use tauri::Emitter;
+
+    let app_handle = app.handle();
+
+    // 1. App Menu (EveryMD)
+    let app_menu = SubmenuBuilder::new(app_handle, "EveryMD")
+        .about(Some(tauri::menu::AboutMetadata {
+            name: Some("EveryMD".into()),
+            version: Some(env!("CARGO_PKG_VERSION").into()),
+            authors: Some(vec!["EveryMD Team".into()]),
+            comments: Some("Modern Minimal Markdown Editor".into()),
+            ..Default::default()
+        }))
+        .separator()
+        .item(&MenuItemBuilder::with_id("settings", "설정...")
+            .accelerator("CmdOrCtrl+,")
+            .build(app_handle)?)
+        .separator()
+        .services()
+        .separator()
+        .hide()
+        .hide_others()
+        .show_all()
+        .separator()
+        .quit()
+        .build()?;
+
+    // 2. File Menu
+    let file_menu = SubmenuBuilder::new(app_handle, "파일")
+        .item(&MenuItemBuilder::with_id("new_file", "새 파일")
+            .accelerator("CmdOrCtrl+N")
+            .build(app_handle)?)
+        .item(&MenuItemBuilder::with_id("open_file", "열기...")
+            .accelerator("CmdOrCtrl+O")
+            .build(app_handle)?)
+        .separator()
+        .item(&MenuItemBuilder::with_id("save_file", "저장")
+            .accelerator("CmdOrCtrl+S")
+            .build(app_handle)?)
+        .item(&MenuItemBuilder::with_id("save_as_file", "다른 이름으로 저장...")
+            .accelerator("CmdOrCtrl+Shift+S")
+            .build(app_handle)?)
+        .separator()
+        .item(&MenuItemBuilder::with_id("close_tab", "탭 닫기")
+            .accelerator("CmdOrCtrl+W")
+            .build(app_handle)?)
+        .build()?;
+
+    // 3. Edit Menu
+    let edit_menu = SubmenuBuilder::new(app_handle, "편집")
+        .undo()
+        .redo()
+        .separator()
+        .cut()
+        .copy()
+        .paste()
+        .select_all()
+        .build()?;
+
+    // 4. View Menu
+    let view_menu = SubmenuBuilder::new(app_handle, "보기")
+        .item(&MenuItemBuilder::with_id("toggle_sidebar", "사이드바 토글")
+            .accelerator("CmdOrCtrl+\\")
+            .build(app_handle)?)
+        .item(&MenuItemBuilder::with_id("toggle_theme", "테마 전환")
+            .accelerator("CmdOrCtrl+Shift+L")
+            .build(app_handle)?)
+        .separator()
+        .item(&MenuItemBuilder::with_id("zoom_in", "확대")
+            .accelerator("CmdOrCtrl+=")
+            .build(app_handle)?)
+        .item(&MenuItemBuilder::with_id("zoom_out", "축소")
+            .accelerator("CmdOrCtrl+-")
+            .build(app_handle)?)
+        .item(&MenuItemBuilder::with_id("zoom_reset", "원래 크기")
+            .accelerator("CmdOrCtrl+0")
+            .build(app_handle)?)
+        .build()?;
+
+    // 5. Window Menu
+    let window_menu = SubmenuBuilder::new(app_handle, "창")
+        .minimize()
+        .item(&PredefinedMenuItem::fullscreen(app_handle, None)?)
+        .separator()
+        .close_window()
+        .build()?;
+
+    // 6. Help Menu
+    let help_menu = SubmenuBuilder::new(app_handle, "도움말")
+        .item(&MenuItemBuilder::with_id("open_github", "GitHub 저장소...")
+            .build(app_handle)?)
+        .item(&MenuItemBuilder::with_id("open_release_notes", "릴리즈 노트 보기...")
+            .build(app_handle)?)
+        .build()?;
+
+    let menu = MenuBuilder::new(app_handle)
+        .items(&[&app_menu, &file_menu, &edit_menu, &view_menu, &window_menu, &help_menu])
+        .build()?;
+
+    app.set_menu(menu)?;
+
+    app.on_menu_event(move |app_handle, event| {
+        let id_str = event.id().as_ref();
+        let _ = app_handle.emit("menu-event", id_str);
+    });
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let initial_files: Vec<String> = std::env::args()
@@ -102,6 +214,16 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .setup(|app| {
+            #[cfg(target_os = "macos")]
+            setup_macos_menu(app)?;
+
+            #[cfg(target_os = "windows")]
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_decorations(false);
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             greet,
             read_file_content,

@@ -22,6 +22,17 @@
   padding-left: 6px;
 }
 
+/* macOS 네이티브 신호등 버튼 오버레이 스타일 */
+.titlebar.is-mac {
+  height: 32px;
+  padding-left: 78px; /* macOS 신호등 🔴🟡🟢 버튼 안전 여백 */
+  justify-content: flex-start;
+}
+
+.titlebar.is-mac .titlebar-left {
+  padding-left: 0;
+}
+
 .titlebar-left {
   display: flex;
   align-items: center;

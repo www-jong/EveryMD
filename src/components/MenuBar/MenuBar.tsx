@@ -3,9 +3,15 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { useFileStore } from '../../stores/fileStore';
 import { useSettingsStore, THEME_PRESETS } from '../../stores/settingsStore';
 import { useFileSystem } from '../../hooks/useFileSystem';
+import { isMacOS } from '../../utils/platform';
 import './MenuBar.css';
 
 export const MenuBar: React.FC = () => {
+  // macOS에서는 화면 최상단 시스템 메뉴바를 사용하므로 창 내부 인앱 MenuBar를 숨김
+  if (isMacOS()) {
+    return null;
+  }
+
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [showAbout, setShowAbout] = useState(false);
   const menuBarRef = useRef<HTMLDivElement | null>(null);
