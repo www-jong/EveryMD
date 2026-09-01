@@ -3,8 +3,20 @@ export interface Tab {
   title: string;
   filePath: string | null;
   content: string;
+  savedContent: string; // 디스크와 동기화된 마지막 원본 내용
   isDirty: boolean;
+  isDeletedFromDisk?: boolean; // 디스크에서 삭제/브랜치 변경으로 파일이 사라진 상태
 }
+
+export interface FileConflictInfo {
+  tabId: string;
+  title: string;
+  filePath: string;
+  localContent: string;
+  diskContent: string;
+  baseContent?: string;
+}
+
 
 export interface FileEntry {
   name: string;

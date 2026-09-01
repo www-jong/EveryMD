@@ -41,8 +41,7 @@ export const useFileSystem = () => {
       }
 
       await writeFile(pathToSave, activeTab.content);
-      // markSaved 파라미터는 2개만 넘겨야 타입 불일치가 나지 않습니다. (id, filePath)
-      markSaved(activeTab.id, pathToSave);
+      markSaved(activeTab.id, pathToSave, activeTab.content);
     } catch (error) {
       console.error('Failed to save file:', error);
     }
@@ -57,8 +56,7 @@ export const useFileSystem = () => {
       if (!pathToSave) return;
 
       await writeFile(pathToSave, activeTab.content);
-      // markSaved 파라미터는 2개만 넘겨야 타입 불일치가 나지 않습니다. (id, filePath)
-      markSaved(activeTab.id, pathToSave);
+      markSaved(activeTab.id, pathToSave, activeTab.content);
     } catch (error) {
       console.error('Failed to save file as:', error);
     }

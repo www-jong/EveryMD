@@ -53,6 +53,30 @@
   flex: 1;
 }
 
+.tab-title.deleted {
+  text-decoration: line-through;
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
+.tab-deleted-tag {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-decoration: none !important;
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.15);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.tab.is-deleted {
+  border-bottom: 2px dashed #f87171;
+}
+
 .tab-dirty {
   font-size: 10px;
   color: var(--text-primary);

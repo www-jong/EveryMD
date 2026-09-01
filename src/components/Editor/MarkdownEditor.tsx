@@ -11,6 +11,107 @@ import './MarkdownEditor.css';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { editorViewCtx } from '@milkdown/core';
+import { $prose, replaceAll } from '@milkdown/kit/utils';
+import { Plugin, PluginKey, NodeSelection } from '@milkdown/kit/prose/state';
+import { dropPoint } from '@milkdown/kit/prose/transform';
+
+interface DraggedBlockInfo {
+  pos: number;
+  nodeSize: number;
+  node: any;
+}
+
+let activeDraggedBlock: DraggedBlockInfo | null = null;
+
+// 블록 손잡이(⠿) 드래그 앤 드롭 이동 및 힌트선 표시를 완벽 처리하는 플러그인
+const blockDragPlugin = $prose(() => {
+  return new Plugin({
+    key: new PluginKey('everymd-block-dnd-manager'),
+    props: {
+      handleDOMEvents: {
+        dragstart: (view, event) => {
+          const isFileDrag = event.dataTransfer?.types?.includes('Files');
+          if (isFileDrag) return false;
+
+          const sel = view.state.selection;
+          if (sel instanceof NodeSelection) {
+            activeDraggedBlock = {
+              pos: sel.from,
+              nodeSize: sel.node.nodeSize,
+              node: sel.node,
+            };
+            if (event.dataTransfer) {
+              event.dataTransfer.effectAllowed = 'move';
+            }
+          }
+          return false;
+        },
+        dragover: (_view, event) => {
+          const isFileDrag = event.dataTransfer?.types?.includes('Files');
+          if (!isFileDrag && event.dataTransfer) {
+            // macOS WebKit 녹색 '+' 복사 배지 제거 및 이동 모드 활성화
+            event.dataTransfer.dropEffect = 'move';
+          }
+          return false;
+        },
+        dragend: () => {
+          activeDraggedBlock = null;
+          return false;
+        },
+      },
+      handleDrop: (view, event, slice) => {
+        const isFileDrag = event.dataTransfer?.types?.includes('Files');
+        if (isFileDrag) return false;
+
+        const eventPos = view.posAtCoords({ left: event.clientX, top: event.clientY });
+        if (!eventPos) return false;
+
+        const { state, dispatch } = view;
+        const targetPos = eventPos.pos;
+
+        if (activeDraggedBlock) {
+          const { pos: fromPos, nodeSize, node } = activeDraggedBlock;
+          const toPos = fromPos + nodeSize;
+
+          // 드롭 대상이 원래 블록 범위 안인 경우 무시
+          if (targetPos >= fromPos && targetPos <= toPos) {
+            activeDraggedBlock = null;
+            return true;
+          }
+
+          // 드롭 삽입 위치 계산
+          const insertPoint = dropPoint(state.doc, targetPos, slice) ?? targetPos;
+
+          let tr = state.tr;
+          // 1. 원본 블록 삭제
+          tr = tr.delete(fromPos, toPos);
+
+          // 2. 삭제 후 드롭 위치 맵핑
+          const mappedTarget = tr.mapping.map(insertPoint);
+
+          // 3. 새 위치에 블록 삽입
+          tr = tr.insert(mappedTarget, node);
+
+          // 4. 새 위치의 블록 선택
+          if (NodeSelection.isSelectable(node)) {
+            try {
+              tr = tr.setSelection(NodeSelection.create(tr.doc, mappedTarget));
+            } catch {
+              // fallback
+            }
+          }
+
+          dispatch(tr.scrollIntoView());
+          activeDraggedBlock = null;
+          event.preventDefault();
+          return true;
+        }
+
+        return false;
+      },
+    },
+  });
+});
 
 interface EditorInnerProps {
   content: string;
@@ -26,14 +127,26 @@ export interface EditorInnerHandle {
 const EditorInner = forwardRef<EditorInnerHandle, EditorInnerProps>(
   ({ content, onChange }, ref) => {
     const editorRef = useRef<Crepe | null>(null);
+    const lastInternalMarkdownRef = useRef(content);
 
     useEditor((root) => {
-      const crepe = new Crepe({ root, defaultValue: content });
+      const crepe = new Crepe({ 
+        root, 
+        defaultValue: content,
+        featureConfigs: {
+          [Crepe.Feature.Cursor]: {
+            color: 'var(--accent-color, #6366f1)',
+            width: 3,
+          },
+        },
+      });
+      crepe.editor.use(blockDragPlugin);
       editorRef.current = crepe;
 
       crepe.on((listener) => {
         listener.markdownUpdated((_ctx, markdown, prevMarkdown) => {
           if (markdown !== prevMarkdown) {
+            lastInternalMarkdownRef.current = markdown;
             onChange(markdown);
           }
         });
@@ -41,6 +154,18 @@ const EditorInner = forwardRef<EditorInnerHandle, EditorInnerProps>(
 
       return crepe;
     }, []);
+
+    // 외부(디스크 리로드/자동 병합)에서 content prop이 변경되었을 때 에디터 화면에 즉시 동기화
+    useEffect(() => {
+      if (editorRef.current && content !== lastInternalMarkdownRef.current) {
+        lastInternalMarkdownRef.current = content;
+        try {
+          editorRef.current.editor.action(replaceAll(content));
+        } catch (err) {
+          console.warn('[MarkdownEditor] 외부 변경사항 런타임 동기화 실패:', err);
+        }
+      }
+    }, [content]);
 
     // ── ProseMirror API를 통한 헤딩 변환 ──────────────────────
     useImperativeHandle(ref, () => ({

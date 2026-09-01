@@ -87,12 +87,15 @@ export const TabBar: React.FC = () => {
         {tabs.map((tab) => (
           <div
             key={tab.id}
-            className={`tab ${tab.id === activeTabId ? 'active' : ''}`}
+            className={`tab ${tab.id === activeTabId ? 'active' : ''} ${tab.isDeletedFromDisk ? 'is-deleted' : ''}`}
             onClick={() => setActiveTabId(tab.id)}
             onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
-            title="우클릭하여 메뉴 보기"
+            title={tab.isDeletedFromDisk ? '디스크에서 삭제된 파일입니다. (Ctrl+S로 다시 저장 가능)' : '우클릭하여 메뉴 보기'}
           >
-            <span className="tab-title">{tab.title}</span>
+            <span className={`tab-title ${tab.isDeletedFromDisk ? 'deleted' : ''}`}>
+              {tab.title}
+              {tab.isDeletedFromDisk && <span className="tab-deleted-tag">삭제됨</span>}
+            </span>
             {tab.isDirty && <span className="tab-dirty">●</span>}
             <button
               className="tab-close"

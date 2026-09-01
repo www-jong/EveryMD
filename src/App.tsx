@@ -8,9 +8,12 @@ import { FileExplorer } from './components/Sidebar/FileExplorer';
 import { MarkdownEditor } from './components/Editor/MarkdownEditor';
 import { StatusBar } from './components/StatusBar/StatusBar';
 import { SettingsModal } from './components/Settings/SettingsModal';
+import { ConflictModal } from './components/Modal/ConflictModal';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
 import { useFileAssociation } from './hooks/useFileAssociation';
+import { useFileWatcher } from './hooks/useFileWatcher';
+import { useFileSystem } from './hooks/useFileSystem';
 import { useFileStore } from './stores/fileStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { readFile, writeFile, isTauri, baseName, SUPPORTED_EXTENSIONS } from './utils/fileSystem';
@@ -22,6 +25,7 @@ const App: React.FC = () => {
   useKeyboard({ onToggleSidebar: toggleSidebar });
   useTheme();
   useFileAssociation();
+  const { conflictInfo, resolveConflict } = useFileWatcher();
   
   const tabs = useFileStore((state) => state.tabs);
   const activeTabId = useFileStore((state) => state.activeTabId);
@@ -85,7 +89,7 @@ const App: React.FC = () => {
       if (!activeTab?.filePath || !activeTab?.isDirty) return;
       try {
         await writeFile(activeTab.filePath, activeTab.content);
-        markSaved(activeTab.id, activeTab.filePath);
+        markSaved(activeTab.id, activeTab.filePath, activeTab.content);
       } catch (err) {
         console.error('Auto-save 실패:', err);
       }
@@ -94,7 +98,7 @@ const App: React.FC = () => {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [activeTab?.content, activeTab?.id, autoSave, autoSaveDelay, markSaved]);
+  }, [activeTab?.content, activeTab?.id, activeTab?.filePath, activeTab?.isDirty, autoSave, autoSaveDelay, markSaved]);
 
   // 탭 전환/창 닫기 시 대기 중이던 자동저장을 즉시 플러시
   // (cleanup은 deps 변경 전의 값을 클로저로 가지므로 "이전 탭" 기준으로 저장됨)
@@ -109,7 +113,7 @@ const App: React.FC = () => {
       const latest = useFileStore.getState().tabs.find((t) => t.id === tabOnMount.id);
       if (!latest?.isDirty || !latest.filePath) return;
       writeFile(latest.filePath, latest.content)
-        .then(() => useFileStore.getState().markSaved(latest.id, latest.filePath!))
+        .then(() => useFileStore.getState().markSaved(latest.id, latest.filePath!, latest.content))
         .catch((err) => console.error('자동저장 플러시 실패:', err));
     };
   }, [activeTabId]);
@@ -240,6 +244,19 @@ const App: React.FC = () => {
     }
   };
 
+  const { handleSave, handleSaveAs } = useFileSystem();
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  }, []);
+
+  const onReSaveDeletedFile = async () => {
+    await handleSave();
+    showToast(`💾 '${activeTab?.title}' 파일이 디스크에 다시 저장되었습니다.`);
+  };
+
   // ─── 타이틀바에 현재 파일명 반영 ─────────────────────────────────────────
   useEffect(() => {
     const fileName = activeTab?.title || 'EveryMD';
@@ -252,7 +269,7 @@ const App: React.FC = () => {
       <TitleBar />
       <MenuBar />
       <TabBar />
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div className="main-content" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {sidebarVisible && <FileExplorer />}
         <button
           onClick={toggleSidebar}
@@ -271,14 +288,14 @@ const App: React.FC = () => {
         
         <div 
           className={`editor-wrapper-layout ${!wordWrap ? 'word-wrap-disabled' : ''}${isDragOver ? ' drag-over' : ''}`}
-          style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
+          style={{ position: 'relative', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
           {isDragOver && (
             <div style={{
-              position: 'absolute', inset: 0, zIndex: 50,
+              position: 'absolute', inset: 0, zIndex: 1000,
               backgroundColor: 'rgba(99, 102, 241, 0.12)',
               border: '2px dashed var(--accent-color)',
               borderRadius: '6px',
@@ -295,6 +312,45 @@ const App: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* 디스크 소실/삭제 경고 배너 */}
+          {activeTab?.isDeletedFromDisk && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '8px 16px', background: 'rgba(239, 68, 68, 0.15)',
+              borderBottom: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5',
+              fontSize: '12.5px', zIndex: 10
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '15px' }}>⚠️</span>
+                <span>이 파일은 디스크(또는 브랜치)에서 삭제되었습니다. 현재 편집본을 보존하시겠습니까?</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={onReSaveDeletedFile}
+                  style={{
+                    padding: '4px 10px', fontSize: '11.5px', fontWeight: 600,
+                    background: '#ef4444', color: '#fff', border: 'none',
+                    borderRadius: '4px', cursor: 'pointer'
+                  }}
+                >
+                  디스크에 다시 저장 (Ctrl+S)
+                </button>
+                <button
+                  onClick={handleSaveAs}
+                  style={{
+                    padding: '4px 10px', fontSize: '11.5px',
+                    background: 'var(--bg-main)', color: 'var(--text-primary)',
+                    border: '1px solid var(--border-color)', borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  다른 이름으로 저장
+                </button>
+              </div>
+            </div>
+          )}
+
           {activeTab ? (
             <MarkdownEditor
               key={activeTab.id}
@@ -310,6 +366,20 @@ const App: React.FC = () => {
       </div>
       <StatusBar onOpenSettings={() => setSettingsOpen(true)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ConflictModal conflict={conflictInfo} onClose={resolveConflict} />
+
+      {/* 저장 피드백 토스트 알림 */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed', bottom: '36px', right: '20px', zIndex: 999999,
+          background: 'var(--bg-sidebar, #1e1e2e)', color: 'var(--text-primary, #cdd6f4)',
+          border: '1px solid var(--accent-color, #89b4fa)', padding: '8px 16px',
+          borderRadius: '6px', fontSize: '12px', fontWeight: 600,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
+        }}>
+          {toastMessage}
+        </div>
+      )}
     </>
   );
 };
