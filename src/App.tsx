@@ -9,6 +9,7 @@ import { MarkdownEditor } from './components/Editor/MarkdownEditor';
 import { StatusBar } from './components/StatusBar/StatusBar';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { ConflictModal } from './components/Modal/ConflictModal';
+import { UnsavedFilesModal } from './components/Modal/UnsavedFilesModal';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useTheme } from './hooks/useTheme';
 import { useFileAssociation } from './hooks/useFileAssociation';
@@ -19,10 +20,15 @@ import { useSettingsStore } from './stores/settingsStore';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { formatShortcut } from './utils/shortcut';
 import { readFile, writeFile, isTauri, baseName, SUPPORTED_EXTENSIONS } from './utils/fileSystem';
+import type { Tab } from './types';
 
 const App: React.FC = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const toggleSidebar = () => setSidebarVisible((v) => !v);
+
+  // 창 닫기 시 미저장 파일 모달 상태
+  const [unsavedModalTabs, setUnsavedModalTabs] = useState<Tab[]>([]);
+  const closeWindowRef = useRef<(() => void) | null>(null);
 
   const { handleNew, handleOpen, handleSave, handleSaveAs, handleCloseTab } = useFileSystem();
   useKeyboard({ onToggleSidebar: toggleSidebar });
@@ -188,7 +194,8 @@ const App: React.FC = () => {
     };
   }, [activeTabId]);
 
-  // 창 닫기 시 미저장 변경사항 경고 (타이틀바 X, OS 닫기, Alt+F4 모두 인터셉트)
+  // 창 닫기 시 미저장 변경사항 → UnsavedFilesModal로 처리
+  // (타이틀바 X, OS 닫기, Alt+F4 모두 인터셉트)
   useEffect(() => {
     if (!isTauri()) return;
 
@@ -197,16 +204,15 @@ const App: React.FC = () => {
 
     getCurrentWindow()
       .onCloseRequested(async (event) => {
-        const hasDirty = useFileStore.getState().tabs.some((t) => t.isDirty);
-        if (!hasDirty) return;
+        const dirtyTabs = useFileStore.getState().tabs.filter((t) => t.isDirty);
+        if (dirtyTabs.length === 0) return; // 미저장 없으면 그냥 닫기
 
         event.preventDefault();
-        const confirmed = window.confirm(
-          '저장되지 않은 변경사항이 있습니다.\n그래도 창을 닫으시겠습니까?'
-        );
-        if (confirmed) {
+        // 종료 확정 함수를 ref에 저장 → 모달 콜백에서 호출
+        closeWindowRef.current = async () => {
           await getCurrentWindow().destroy();
-        }
+        };
+        setUnsavedModalTabs(dirtyTabs);
       })
       .then((fn) => {
         if (disposed) fn();
@@ -436,6 +442,19 @@ const App: React.FC = () => {
       <StatusBar onOpenSettings={() => setSettingsOpen(true)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} />
       <ConflictModal conflict={conflictInfo} onClose={resolveConflict} />
+      {unsavedModalTabs.length > 0 && (
+        <UnsavedFilesModal
+          dirtyTabs={unsavedModalTabs}
+          onConfirmClose={() => {
+            setUnsavedModalTabs([]);
+            closeWindowRef.current?.();
+          }}
+          onCancel={() => {
+            setUnsavedModalTabs([]);
+            closeWindowRef.current = null;
+          }}
+        />
+      )}
 
       {/* 저장 피드백 토스트 알림 */}
       {toastMessage && (

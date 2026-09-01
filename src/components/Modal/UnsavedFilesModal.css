@@ -1,0 +1,258 @@
+.unsaved-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999999;
+  animation: unsaved-fade-in 0.15s ease-out;
+}
+
+@keyframes unsaved-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.unsaved-modal-dialog {
+  background-color: var(--bg-sidebar, #1e1e2e);
+  color: var(--text-primary, #cdd6f4);
+  width: 480px;
+  max-width: 95vw;
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--border-color, #313244);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: unsaved-scale-up 0.15s ease-out;
+}
+
+@keyframes unsaved-scale-up {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* ── 헤더 ── */
+.unsaved-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--border-color, #313244);
+  background-color: var(--bg-titlebar, #181825);
+}
+
+.unsaved-modal-header-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.unsaved-modal-header-text {
+  flex: 1;
+}
+
+.unsaved-modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #cdd6f4);
+  margin: 0 0 2px;
+}
+
+.unsaved-modal-subtitle {
+  font-size: 11.5px;
+  color: var(--text-muted, #6c7086);
+  margin: 0;
+}
+
+/* ── 현재 파일 카드 ── */
+.unsaved-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.unsaved-file-card {
+  background-color: var(--bg-main, #1e1e2e);
+  border: 1px solid var(--border-color, #313244);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.unsaved-file-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unsaved-file-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.unsaved-file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.unsaved-file-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #cdd6f4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unsaved-file-path {
+  font-size: 11px;
+  color: var(--text-muted, #6c7086);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.unsaved-file-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.unsaved-file-badge.new-file {
+  background-color: rgba(139, 148, 233, 0.2);
+  color: #b4befe;
+  border: 1px solid rgba(180, 190, 254, 0.3);
+}
+
+.unsaved-file-badge.modified {
+  background-color: rgba(249, 226, 175, 0.15);
+  color: #f9e2af;
+  border: 1px solid rgba(249, 226, 175, 0.3);
+}
+
+.unsaved-file-hint {
+  font-size: 11px;
+  color: var(--text-muted, #6c7086);
+  padding-left: 24px;
+}
+
+/* 개별 파일 버튼 */
+.unsaved-file-actions {
+  display: flex;
+  gap: 8px;
+  padding-left: 24px;
+}
+
+.unsaved-btn-save {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: var(--accent-color, #b4befe);
+  color: var(--bg-main, #1e1e2e);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+.unsaved-btn-save:hover { opacity: 0.85; }
+.unsaved-btn-save:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.unsaved-btn-skip {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: transparent;
+  color: var(--text-secondary, #a6adc8);
+  border: 1px solid var(--border-color, #313244);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.unsaved-btn-skip:hover { background-color: var(--bg-hover, #313244); }
+
+/* ── 진행 표시 ── */
+.unsaved-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-muted, #6c7086);
+}
+
+.unsaved-progress-bar-track {
+  flex: 1;
+  height: 3px;
+  background-color: var(--border-color, #313244);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.unsaved-progress-bar-fill {
+  height: 100%;
+  background-color: var(--accent-color, #b4befe);
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
+
+/* ── 하단 일괄 버튼 ── */
+.unsaved-modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-color, #313244);
+  background-color: var(--bg-titlebar, #181825);
+}
+
+.unsaved-footer-spacer { flex: 1; }
+
+.unsaved-btn-all-save {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: var(--accent-color, #b4befe);
+  color: var(--bg-main, #1e1e2e);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+.unsaved-btn-all-save:hover { opacity: 0.85; }
+
+.unsaved-btn-discard-all {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: transparent;
+  color: #f38ba8;
+  border: 1px solid rgba(243, 139, 168, 0.4);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.unsaved-btn-discard-all:hover { background-color: rgba(243, 139, 168, 0.1); }
+
+.unsaved-btn-cancel {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: transparent;
+  color: var(--text-secondary, #a6adc8);
+  border: 1px solid var(--border-color, #313244);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.unsaved-btn-cancel:hover { background-color: var(--bg-hover, #313244); }
