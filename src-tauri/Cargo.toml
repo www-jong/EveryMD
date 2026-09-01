@@ -1,6 +1,6 @@
 [package]
 name = "everymd"
-version = "0.4.4"
+version = "0.4.5"
 description = "EveryMD - Modern Minimal Markdown Editor"
 authors = ["you"]
 edition = "2021"

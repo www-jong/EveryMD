@@ -5,7 +5,27 @@
 
 ---
 
+## [0.4.5] - 2026-09-02
+
+### 추가 (Added)
+- **창 닫기 시 미저장 파일 순차 확인 모달 (UnsavedFilesModal)**:
+  - 종료 시 미저장 탭을 1개씩 순차 표시 — 저장 / 이 파일 건너뜀 개별 선택 가능
+  - 나머지 파일 일괄 처리 버튼 (모두 저장 / 모두 저장 안 함) 제공
+  - 미저장 임시 파일(새 파일)은 Save As 다이얼로그 자동 연동, 취소 시 건너뜀 처리
+- **창 전환 시 즉시 저장 (Save on Blur) 설정 토글**:
+  - 설정 → 일반 탭에서 Blur 자동 저장 활성화 여부 제어 가능 (기본값 ON)
+  - OFF 시 외부 수정 감지는 기존 3-Way Auto-Merge / ConflictModal 흐름으로 처리
+- **에디터 웹폰트 번들 내장**:
+  - Inter, Noto Sans KR, Nanum Gothic, JetBrains Mono, Source Code Pro 폰트를 앱 인스톨러에 포함
+  - 인터넷 연결 없이 설치 즉시 폰트 전환 적용
+
+### 변경 (Changed)
+- package.json / tauri.conf.json / Cargo.toml 버전 동기화 (0.4.5)
+
+---
+
 ## [0.4.3] - 2026-09-01
+
 
 ### 추가 (Added)
 - **외부 파일 변경 감지 & 3-Way Auto-Merge 시스템**:
