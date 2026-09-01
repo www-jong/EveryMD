@@ -138,10 +138,11 @@ const App: React.FC = () => {
   }, [openFile]);
 
   const handleEditorChange = useCallback((markdown: string) => {
-    if (activeTab) {
-      updateContent(activeTab.id, markdown);
+    const curActiveId = useFileStore.getState().activeTabId;
+    if (curActiveId) {
+      updateContent(curActiveId, markdown);
     }
-  }, [activeTab, updateContent]);
+  }, [updateContent]);
 
   // ─── Auto-Save (debounced) ─────────────────────────────────────────────────
   const { autoSave, autoSaveDelay } = useSettingsStore();

@@ -7,11 +7,9 @@ import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 import './MarkdownEditor.css';
 
-// editorViewCtx는 JS에는 있으나 .d.ts에 export 누락 — 런타임에는 정상 존재
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 import { editorViewCtx } from '@milkdown/core';
 import { $prose, replaceAll } from '@milkdown/kit/utils';
+import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
 import { Plugin, PluginKey, NodeSelection } from '@milkdown/kit/prose/state';
 import { dropPoint } from '@milkdown/kit/prose/transform';
 
@@ -128,6 +126,11 @@ const EditorInner = forwardRef<EditorInnerHandle, EditorInnerProps>(
   ({ content, onChange }, ref) => {
     const editorRef = useRef<Crepe | null>(null);
     const lastInternalMarkdownRef = useRef(content);
+    const onChangeRef = useRef(onChange);
+
+    useEffect(() => {
+      onChangeRef.current = onChange;
+    }, [onChange]);
 
     useEditor((root) => {
       const crepe = new Crepe({ 
@@ -141,17 +144,27 @@ const EditorInner = forwardRef<EditorInnerHandle, EditorInnerProps>(
         },
       });
       crepe.editor.use(blockDragPlugin);
-      editorRef.current = crepe;
-
-      crepe.on((listener) => {
-        listener.markdownUpdated((_ctx, markdown, prevMarkdown) => {
+      crepe.editor.use(listener);
+      crepe.editor.config((ctx) => {
+        ctx.get(listenerCtx).markdownUpdated((_ctx, markdown, prevMarkdown) => {
           if (markdown !== prevMarkdown) {
             lastInternalMarkdownRef.current = markdown;
-            onChange(markdown);
+            onChangeRef.current?.(markdown);
+          }
+        });
+        ctx.get(listenerCtx).updated(() => {
+          try {
+            const md = crepe.getMarkdown();
+            if (md !== lastInternalMarkdownRef.current) {
+              lastInternalMarkdownRef.current = md;
+              onChangeRef.current?.(md);
+            }
+          } catch (e) {
+            // ignore
           }
         });
       });
-
+      editorRef.current = crepe;
       return crepe;
     }, []);
 
