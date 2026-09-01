@@ -17,6 +17,7 @@ import { useFileSystem } from './hooks/useFileSystem';
 import { useFileStore } from './stores/fileStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { formatShortcut } from './utils/shortcut';
 import { readFile, writeFile, isTauri, baseName, SUPPORTED_EXTENSIONS } from './utils/fileSystem';
 
 const App: React.FC = () => {
@@ -348,7 +349,7 @@ const App: React.FC = () => {
             borderRight: '1px solid var(--border-color)',
             flexShrink: 0
           }}
-          title="사이드바 토글 (Ctrl+\)"
+          title={`사이드바 토글 (${formatShortcut('ctrl+\\')})`}
         >
           {sidebarVisible ? '◀' : '▶'}
         </button>
@@ -401,12 +402,12 @@ const App: React.FC = () => {
                     borderRadius: '4px', cursor: 'pointer'
                   }}
                 >
-                  디스크에 다시 저장 (Ctrl+S)
+                  디스크에 다시 저장 ({formatShortcut('ctrl+s')})
                 </button>
                 <button
                   onClick={handleSaveAs}
                   style={{
-                    padding: '4px 10px', fontSize: '11.5px',
+                    padding: '4px 10px', fontSize: '11.5px', fontWeight: 500,
                     background: 'var(--bg-main)', color: 'var(--text-primary)',
                     border: '1px solid var(--border-color)', borderRadius: '4px',
                     cursor: 'pointer'
@@ -426,7 +427,7 @@ const App: React.FC = () => {
             />
           ) : (
             <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-              파일을 열거나 새 파일을 만드세요 (Ctrl+N / Ctrl+O / 설정: Ctrl+,)
+              파일을 열거나 새 파일을 만드세요 ({formatShortcut('ctrl+n')} / {formatShortcut('ctrl+o')} / 설정: {formatShortcut('ctrl+,')})
             </div>
           )}
         </div>

@@ -3,6 +3,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { useFileStore } from '../../stores/fileStore';
 import { useSettingsStore, THEME_PRESETS } from '../../stores/settingsStore';
 import { useFileSystem } from '../../hooks/useFileSystem';
+import { formatShortcut } from '../../utils/shortcut';
 import { isMacOS } from '../../utils/platform';
 import './MenuBar.css';
 
@@ -55,12 +56,6 @@ export const MenuBar: React.FC = () => {
       editorEl.dispatchEvent(new Event('input', { bubbles: true }));
     }
     setActiveMenu(null);
-  };
-
-  const formatShortcut = (combo: string): string => {
-    return combo.split('+')
-      .map(k => k.charAt(0).toUpperCase() + k.slice(1))
-      .join('+');
   };
 
   return (

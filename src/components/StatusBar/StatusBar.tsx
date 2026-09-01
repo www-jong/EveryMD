@@ -2,6 +2,7 @@ import React from 'react';
 import { useFileStore } from '../../stores/fileStore';
 import { useTheme } from '../../hooks/useTheme';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { formatShortcut } from '../../utils/shortcut';
 import './StatusBar.css';
 
 interface StatusBarProps {
@@ -32,7 +33,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({ onOpenSettings }) => {
         <button className="statusbar-btn" onClick={toggleTheme} title="테마 변경">
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
-        <button className="statusbar-btn" onClick={onOpenSettings} title="설정 (Ctrl+,)">
+        <button className="statusbar-btn" onClick={onOpenSettings} title={`설정 (${formatShortcut('ctrl+,')})`}>
           ⚙️
         </button>
       </div>

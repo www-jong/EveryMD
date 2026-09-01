@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSettingsStore, CustomTheme, THEME_PRESETS, ThemeColors, applyThemeColors } from '../../stores/settingsStore';
 import { UpdateSection } from './UpdateSection';
+import { formatShortcut } from '../../utils/shortcut';
 import './SettingsModal.css';
 
 interface SettingsModalProps {
@@ -373,7 +374,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         <span className="shortcut-listening-badge">새로운 단축키 입력 대기 중 (Esc로 취소)...</span>
                       ) : (
                         <>
-                          <kbd className="shortcut-kbd">{keys}</kbd>
+                          <kbd className="shortcut-kbd">{formatShortcut(keys)}</kbd>
                           <button className="change-shortcut-btn" onClick={() => setListeningShortcut(action)}>변경</button>
                         </>
                       )}
