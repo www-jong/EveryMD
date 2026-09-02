@@ -54,6 +54,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   const modalRef = useRef<HTMLDivElement | null>(null);
 
+  const normalizedFontValue = React.useMemo(() => {
+    if (!fontFamily) return "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    if (fontFamily.includes('Noto Sans KR')) return "'Noto Sans KR', 'Inter', sans-serif";
+    if (fontFamily.includes('Nanum Gothic')) return "'Nanum Gothic', 'Inter', sans-serif";
+    if (fontFamily.includes('JetBrains Mono')) return "'JetBrains Mono', 'Source Code Pro', monospace";
+    if (fontFamily.includes('Source Code Pro')) return "'Source Code Pro', 'JetBrains Mono', monospace";
+    if (fontFamily.includes('Georgia')) return "Georgia, 'Times New Roman', serif";
+    if (fontFamily.includes('system-ui')) return "system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+    return "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  }, [fontFamily]);
+
   // 1. 현재 선택된 테마의 색상 읽기 헬퍼
   const getThemeColors = (themeId: string): ThemeColors => {
     const preset = THEME_PRESETS[themeId];
@@ -243,7 +254,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   return (
     <div className="settings-overlay">
-      <div className="settings-modal" ref={modalRef}>
+      <div className="settings-modal" ref={modalRef} onClick={(e) => e.stopPropagation()}>
         <div className="settings-header">
           <h3>설정 (Preferences)</h3>
           <button className="settings-close-btn" onClick={onClose}>×</button>
@@ -283,19 +294,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 </div>
                 <div className="setting-control">
                   <select
-                    value={fontFamily}
+                    value={normalizedFontValue}
                     onChange={(e) => setFontFamily(e.target.value)}
                     className="theme-dropdown"
                     style={{ minWidth: '180px' }}
                   >
-                    <option value="Inter">Inter (기본)</option>
-                    <option value="'Noto Sans KR'">Noto Sans KR (한국어)</option>
-                    <option value="'Nanum Gothic'">Nanum Gothic (나눔고딕)</option>
-                    <option value="'JetBrains Mono'">JetBrains Mono (코드)</option>
-                    <option value="'Source Code Pro'">Source Code Pro (코드)</option>
-                    <option value="Georgia, serif">Georgia (serif)</option>
-                    <option value="system-ui, sans-serif">시스템 기본 폰트</option>
+                    <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">Inter (기본)</option>
+                    <option value="'Noto Sans KR', 'Inter', sans-serif">Noto Sans KR (한국어)</option>
+                    <option value="'Nanum Gothic', 'Inter', sans-serif">Nanum Gothic (나눔고딕)</option>
+                    <option value="'JetBrains Mono', 'Source Code Pro', monospace">JetBrains Mono (고정폭)</option>
+                    <option value="'Source Code Pro', 'JetBrains Mono', monospace">Source Code Pro (고정폭)</option>
+                    <option value="Georgia, 'Times New Roman', serif">Georgia (명조/serif)</option>
+                    <option value="system-ui, -apple-system, BlinkMacSystemFont, sans-serif">시스템 기본 폰트</option>
                   </select>
+                </div>
+              </div>
+
+              {/* 글꼴 실시간 미리보기 박스 */}
+              <div 
+                className="font-preview-box" 
+                style={{ 
+                  fontFamily: normalizedFontValue, 
+                  fontSize: `${Math.min(18, Math.max(13, fontSize))}px` 
+                }}
+              >
+                <div className="font-preview-sample">
+                  다람쥐 헌 쳇바퀴에 타고파. EveryMD 마크다운 12345
+                </div>
+                <div className="font-preview-sub">
+                  The quick brown fox jumps over the lazy dog. {"{ a + b = c; }"}
                 </div>
               </div>
 

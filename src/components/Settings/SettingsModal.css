@@ -198,6 +198,32 @@ input:checked + .slider:before {
   background-color: var(--bg-main);
 }
 
+/* 글꼴 실시간 미리보기 박스 */
+.font-preview-box {
+  margin: 10px 0 16px 0;
+  padding: 14px 18px;
+  background-color: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.font-preview-sample {
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.font-preview-sub {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+
 .slider.round {
   border-radius: 22px;
 }

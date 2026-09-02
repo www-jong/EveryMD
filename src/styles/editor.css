@@ -22,7 +22,25 @@
   flex-direction: column;
 }
 
-/* ProseMirror 에디터 영역 좌측 정렬 및 여백 균형 매칭 */
+/* ProseMirror 에디터 영역 및 모든 하위 텍스트 글꼴 동기화 */
+.editor-container,
+.editor-container .milkdown,
+.editor-container .milkdown .ProseMirror,
+.editor-container .milkdown p,
+.editor-container .milkdown h1,
+.editor-container .milkdown h2,
+.editor-container .milkdown h3,
+.editor-container .milkdown h4,
+.editor-container .milkdown h5,
+.editor-container .milkdown h6,
+.editor-container .milkdown li,
+.editor-container .milkdown blockquote,
+.editor-container .milkdown table,
+.editor-container .milkdown td,
+.editor-container .milkdown th {
+  font-family: var(--editor-font-family, 'Inter', sans-serif) !important;
+}
+
 .editor-container .milkdown .ProseMirror {
   outline: none;
   min-height: calc(100vh - 220px);
@@ -30,7 +48,6 @@
   box-sizing: border-box;
   width: 100% !important;
   font-size: var(--editor-font-size, 16px) !important;
-  font-family: var(--editor-font-family, 'Inter'), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
   line-height: 1.7;
   text-align: left !important; /* 강제 좌측 정렬 */
 }
