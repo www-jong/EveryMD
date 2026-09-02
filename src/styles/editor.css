@@ -41,7 +41,7 @@
   font-family: var(--editor-font-family, 'Inter', sans-serif) !important;
 }
 
-.editor-container .milkdown .ProseMirror {
+.editor-container .milkdown > .ProseMirror {
   outline: none;
   min-height: calc(100vh - 220px);
   padding: 0 !important; /* 내부 불필요한 패딩 제거 */
@@ -53,10 +53,57 @@
 }
 
 /* 줄바꿈(wordWrap) 설정 동적 제어 (Zustand wordWrap 변수와 연동용 스타일) */
-.editor-container.word-wrap-disabled .milkdown .ProseMirror {
+.editor-container.word-wrap-disabled .milkdown > .ProseMirror {
   white-space: pre !important;
   word-wrap: normal !important;
   overflow-x: auto !important;
+}
+
+/* ── 인라인 수식 편집창(latex popup) 크기 정상화 & 동적 조절 ── */
+.milkdown .milkdown-latex-inline-edit[data-show='false'] {
+  display: none !important;
+}
+
+.milkdown .milkdown-latex-inline-edit {
+  position: absolute;
+  z-index: 100;
+  background-color: var(--bg-sidebar, #1e1e1e) !important;
+  border: 1px solid var(--border-color, #3a3a3a) !important;
+  border-radius: var(--border-radius, 6px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  padding: 4px 8px !important;
+  height: auto !important;
+  min-height: unset !important;
+  max-height: unset !important;
+}
+
+.milkdown .milkdown-latex-inline-edit[data-show='true'] {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.milkdown .milkdown-latex-inline-edit .container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: auto !important;
+  min-height: unset !important;
+}
+
+.milkdown .milkdown-latex-inline-edit .ProseMirror {
+  min-height: unset !important;
+  height: auto !important;
+  padding: 2px 8px !important;
+  font-size: 13px !important;
+  font-family: var(--font-mono, monospace) !important;
+  line-height: 1.4 !important;
+  min-width: 120px !important;
+  max-width: 420px !important;
+  color: var(--text-primary) !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  display: inline-block !important;
 }
 
 /* 제목 폰트 크기 배율 적용 및 정돈 */

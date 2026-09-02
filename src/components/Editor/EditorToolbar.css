@@ -5,9 +5,15 @@
   display: flex;
   align-items: center;
   padding: 0 16px;
-  gap: 6px;
+  gap: 4px;
   flex-shrink: 0;
   user-select: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.editor-toolbar::-webkit-scrollbar {
+  display: none;
 }
 
 .toolbar-btn {
@@ -28,6 +34,13 @@
 .toolbar-btn:hover {
   background-color: var(--bg-hover);
   color: var(--accent-color);
+}
+
+.toolbar-btn.active {
+  background-color: var(--bg-active, rgba(99, 102, 241, 0.2)) !important;
+  color: var(--accent-color, #6366f1) !important;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1.5px var(--accent-color, #6366f1);
 }
 
 .toolbar-btn.bold {

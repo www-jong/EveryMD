@@ -239,6 +239,9 @@ const App: React.FC = () => {
 
     getCurrentWebview()
       .onDragDropEvent((event) => {
+        // 에디터 내부 요소(이미지, 블록 등) 이동 드래그 중인 경우 외부 파일 드롭 이벤트 무시
+        if ((window as any).__EVERYMD_INTERNAL_DRAGGING__) return;
+
         const payload = event.payload;
         if (payload.type === 'enter') {
           setDragCount(payload.paths.filter((p) => extPattern.test(p)).length);
