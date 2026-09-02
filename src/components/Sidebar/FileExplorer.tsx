@@ -4,6 +4,7 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { openFolderDialog, readDirectory, readFile, renameFile, duplicateFile, isTauri, SUPPORTED_EXTENSIONS } from '../../utils/fileSystem';
 import { useFileStore } from '../../stores/fileStore';
 import { FileEntry } from '../../types';
+import { FolderChangeModal } from '../Modal/FolderChangeModal';
 import './FileExplorer.css';
 
 interface ContextMenuState {
@@ -92,9 +93,14 @@ export const FileExplorer: React.FC = () => {
     entry: null,
   });
 
+  const [pendingFolderPath, setPendingFolderPath] = useState<string | null>(null);
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+
+  const tabs = useFileStore((state) => state.tabs);
   const openFile = useFileStore((state) => state.openFile);
   const openFolderPath = useFileStore((state) => state.openFolderPath);
   const setOpenFolderPath = useFileStore((state) => state.setOpenFolderPath);
+  const closeAllTabs = useFileStore((state) => state.closeAllTabs);
   const refreshTrigger = useFileStore((state) => state.refreshTrigger);
   const triggerRefresh = useFileStore((state) => state.triggerRefresh);
   const retargetTabPath = useFileStore((state) => state.retargetTabPath);
@@ -142,9 +148,37 @@ export const FileExplorer: React.FC = () => {
 
   const handleOpenFolder = async () => {
     const path = await openFolderDialog();
-    if (path) {
+    if (!path) return;
+
+    // 현재 열려 있는 탭이 1개 이상이고, 다른 폴더를 열려고 하는 경우 모달 표시
+    if (tabs.length > 0 && path !== openFolderPath) {
+      setPendingFolderPath(path);
+      setIsFolderModalOpen(true);
+    } else {
       setOpenFolderPath(path);
     }
+  };
+
+  const handleCloseAndOpenFolder = () => {
+    if (pendingFolderPath) {
+      closeAllTabs();
+      setOpenFolderPath(pendingFolderPath);
+    }
+    setIsFolderModalOpen(false);
+    setPendingFolderPath(null);
+  };
+
+  const handleKeepAndOpenFolder = () => {
+    if (pendingFolderPath) {
+      setOpenFolderPath(pendingFolderPath);
+    }
+    setIsFolderModalOpen(false);
+    setPendingFolderPath(null);
+  };
+
+  const handleCancelFolderChange = () => {
+    setIsFolderModalOpen(false);
+    setPendingFolderPath(null);
   };
 
   const handleFileClick = useCallback(async (entry: FileEntry) => {
@@ -320,6 +354,16 @@ export const FileExplorer: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 작업 폴더 변경 시 탭 처리 확인 모달 */}
+      <FolderChangeModal
+        isOpen={isFolderModalOpen}
+        pendingFolderPath={pendingFolderPath}
+        tabCount={tabs.length}
+        onCloseAndOpen={handleCloseAndOpenFolder}
+        onKeepAndOpen={handleKeepAndOpenFolder}
+        onCancel={handleCancelFolderChange}
+      />
     </div>
   );
 };

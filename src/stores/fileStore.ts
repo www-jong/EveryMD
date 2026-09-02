@@ -13,6 +13,7 @@ interface FileState {
   openFile: (filePath: string, content: string, title?: string) => void;
   closeTab: (id: string) => void;
   closeOtherTabs: (id: string) => void;
+  closeAllTabs: () => void;
   setActiveTabId: (id: string | null) => void;
   updateContent: (id: string, content: string) => void;
   markSaved: (id: string, filePath: string, savedContent?: string) => void;
@@ -159,6 +160,11 @@ export const useFileStore = create<FileState>((set, get) => {
       const newTabs = tabs.filter((t) => t.id === id);
       set({ tabs: newTabs, activeTabId: id });
       persistWorkspaceState(newTabs, id);
+    },
+
+    closeAllTabs: () => {
+      set({ tabs: [], activeTabId: null });
+      persistWorkspaceState([], null);
     },
 
     setActiveTabId: (id) => {
