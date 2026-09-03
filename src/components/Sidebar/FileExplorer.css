@@ -68,10 +68,21 @@
   user-select: none;
   font-size: 13px;
   color: var(--text-primary);
+  transition: background-color var(--transition-fast), opacity var(--transition-fast);
 }
 
-.file-tree-row:hover {
+.file-tree-row:hover:not(.unsupported) {
   background-color: var(--bg-hover);
+}
+
+.file-tree-row.unsupported {
+  color: var(--text-muted);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.file-tree-row.unsupported:hover {
+  background-color: transparent;
 }
 
 .file-icon {

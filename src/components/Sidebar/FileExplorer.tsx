@@ -40,13 +40,15 @@ const FileTreeItem: React.FC<{
     }
   }, [isOpen, refreshTrigger, loadDirectory]);
 
+  const isSupported = entry.isDir || SUPPORTED_EXTENSIONS.some((ext) => entry.name.toLowerCase().endsWith('.' + ext));
+
   const handleClick = async () => {
     if (entry.isDir) {
       if (!isOpen && children.length === 0) {
         await loadDirectory();
       }
       setIsOpen(!isOpen);
-    } else {
+    } else if (isSupported) {
       onFileClick(entry);
     }
   };
@@ -60,11 +62,12 @@ const FileTreeItem: React.FC<{
   return (
     <div className="file-tree-item">
       <div 
-        className="file-tree-row" 
+        className={`file-tree-row ${!isSupported ? 'unsupported' : ''}`} 
         onClick={handleClick}
         onContextMenu={handleRowContextMenu}
+        title={!isSupported ? `${entry.name} (지원되지 않는 파일 형식)` : entry.name}
       >
-        <span className="file-icon">{entry.isDir ? '📁' : '📄'}</span>
+        <span className="file-icon">{entry.isDir ? '📁' : isSupported ? '📄' : '📎'}</span>
         <span className="file-name">{entry.name}</span>
       </div>
       {entry.isDir && isOpen && (
