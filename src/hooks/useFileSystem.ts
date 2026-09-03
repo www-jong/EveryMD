@@ -66,38 +66,35 @@ export const useFileSystem = () => {
     closeTab(id);
   }, [closeTab]);
 
-  const handleRename = useCallback(async (tabId: string) => {
+  const performRename = useCallback(async (tabId: string, newTitle: string) => {
     const tab = useFileStore.getState().tabs.find(t => t.id === tabId);
     if (!tab) return;
-
-    const newTitle = prompt('새 파일 이름을 입력하세요 (확장자 .md 포함):', tab.title);
-    if (!newTitle || newTitle === tab.title) return;
+    const trimmed = newTitle.trim();
+    if (!trimmed || trimmed === tab.title) return;
 
     try {
       if (tab.filePath) {
-        // 기존 파일 경로가 있는 경우 디스크 이름 변경 처리
         const sep = tab.filePath.includes('/') ? '/' : '\\';
-        const pathParts = tab.filePath.split(/[/\\]/);
-        pathParts.pop(); // 파일명 제외
-        const parentPath = pathParts.join(sep);
-        const newPath = parentPath + sep + newTitle;
+        const lastSepIndex = tab.filePath.lastIndexOf(sep);
+        const newPath = lastSepIndex < 0 
+          ? trimmed 
+          : lastSepIndex === 0 
+            ? `${sep}${trimmed}` 
+            : `${tab.filePath.substring(0, lastSepIndex)}${sep}${trimmed}`;
 
-        // 이름 변경 전 미저장 편집 내용을 먼저 디스크에 반영 (내용 유실 방지)
         if (tab.isDirty) {
           await writeFile(tab.filePath, tab.content);
         }
 
         await renameFile(tab.filePath, newPath);
-        // 디스크 변경 완료 후 스토어 상태 변경
-        renameTabTitle(tabId, newTitle);
-        markSaved(tabId, newPath); // 스토어의 파일 경로 갱신 처리 연계
+        renameTabTitle(tabId, trimmed);
+        markSaved(tabId, newPath);
       } else {
-        // 새 파일 상태에서 타이틀만 바꾸는 경우
-        renameTabTitle(tabId, newTitle);
+        renameTabTitle(tabId, trimmed);
       }
     } catch (error) {
       console.error('Failed to rename file:', error);
-      alert('파일 이름 변경에 실패했습니다.');
+      throw error;
     }
   }, [renameTabTitle, markSaved]);
 
@@ -107,6 +104,6 @@ export const useFileSystem = () => {
     handleSave,
     handleSaveAs,
     handleCloseTab,
-    handleRename,
+    performRename,
   };
 };

@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { openFolderDialog, readDirectory, readFile, renameFile, duplicateFile, isTauri, SUPPORTED_EXTENSIONS } from '../../utils/fileSystem';
+import { openFolderDialog, readDirectory, readFile, writeFile, renameFile, duplicateFile, isTauri, SUPPORTED_EXTENSIONS } from '../../utils/fileSystem';
 import { useFileStore } from '../../stores/fileStore';
 import { FileEntry } from '../../types';
 import { FolderChangeModal } from '../Modal/FolderChangeModal';
+import { RenameModal } from '../Modal/RenameModal';
 import './FileExplorer.css';
 
 interface ContextMenuState {
@@ -95,6 +95,13 @@ export const FileExplorer: React.FC = () => {
 
   const [pendingFolderPath, setPendingFolderPath] = useState<string | null>(null);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [renameModalState, setRenameModalState] = useState<{
+    isOpen: boolean;
+    entry: FileEntry | null;
+  }>({
+    isOpen: false,
+    entry: null,
+  });
 
   const tabs = useFileStore((state) => state.tabs);
   const openFile = useFileStore((state) => state.openFile);
@@ -202,23 +209,43 @@ export const FileExplorer: React.FC = () => {
     });
   };
 
-  // 컨텍스트 기능 1: 이름 변경 (Rename)
-  const handleRename = async () => {
+  // 컨텍스트 기능 1: 이름 변경 모달 열기
+  const handleRenameClick = () => {
     const entry = contextMenu.entry;
     if (!entry) return;
+    setContextMenu((prev) => ({ ...prev, visible: false }));
+    setRenameModalState({
+      isOpen: true,
+      entry,
+    });
+  };
 
-    const newName = prompt('새로운 파일/폴더명을 입력하세요:', entry.name);
-    if (!newName || newName.trim() === '' || newName === entry.name) return;
+  // 이름 변경 확정 처리
+  const handleConfirmRename = async (newName: string) => {
+    const entry = renameModalState.entry;
+    if (!entry) return;
+
+    setRenameModalState({ isOpen: false, entry: null });
 
     try {
-      const parentPath = entry.path.substring(0, entry.path.lastIndexOf(entry.path.includes('/') ? '/' : '\\'));
       const sep = entry.path.includes('/') ? '/' : '\\';
-      const newPath = parentPath + sep + newName.trim();
+      const lastSepIndex = entry.path.lastIndexOf(sep);
+      const newPath = lastSepIndex < 0 
+        ? newName 
+        : lastSepIndex === 0 
+          ? `${sep}${newName}` 
+          : `${entry.path.substring(0, lastSepIndex)}${sep}${newName}`;
       
+      // 열려 있는 탭 중 이 파일이 있고 미저장 편집 내용이 있다면 먼저 디스크에 저장
+      const openTab = tabs.find((t) => t.filePath === entry.path);
+      if (openTab && openTab.isDirty) {
+        await writeFile(entry.path, openTab.content);
+      }
+
       await renameFile(entry.path, newPath);
-      // 열려 있는 탭이 이 파일을 가리키고 있다면 경로/제목 갱신 (옛 경로로 재저장 방지)
+      // 열려 있는 탭의 경로/제목 동기화
       retargetTabPath(entry.path, newPath);
-      // 파일 시스템 처리 완료 후 즉각 갱신
+      // 탐색기 트리 즉각 갱신
       triggerRefresh();
     } catch (err) {
       console.error('이름 변경 실패:', err);
@@ -269,31 +296,6 @@ export const FileExplorer: React.FC = () => {
       alert('탐색기에서 열기에 실패했습니다.');
     }
   };
-  const handleOpenInNewWindow = async () => {
-    const entry = contextMenu.entry;
-    if (!entry || entry.isDir) return;
-
-    if (!isTauri()) {
-      return;
-    }
-
-    try {
-      const windowId = 'everymd_' + Date.now();
-      const newWin = new WebviewWindow(windowId, {
-        title: `${entry.name} — EveryMD`,
-        url: `index.html?openFile=${encodeURIComponent(entry.path)}`,
-        width: 1000,
-        height: 700,
-        decorations: false,
-        center: true,
-      });
-      newWin.once('tauri://error', (e: unknown) => {
-        console.error('새 창 생성 실패:', e);
-      });
-    } catch (err) {
-      console.error('새 창 생성 실패:', err);
-    }
-  };
 
   return (
     <div className="file-explorer">
@@ -332,28 +334,32 @@ export const FileExplorer: React.FC = () => {
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="context-menu-item" onClick={handleRename}>
-            <span>이름 수정 (Rename)...</span>
+          <div className="context-menu-item" onClick={handleRenameClick}>
+            <span>📝 이름 변경 (Rename)...</span>
           </div>
           <div className="context-menu-item" onClick={handleRevealInExplorer}>
             <span>📂 탐색기에서 열기</span>
           </div>
           {contextMenu.entry && !contextMenu.entry.isDir && (
-            <>
-              <div className="context-menu-item" onClick={handleOpenInNewWindow}>
-                <span>새 윈도우에서 열기</span>
-              </div>
-              <div className="context-menu-item" onClick={handleDuplicate}>
-                <span>복제 (Duplicate)</span>
-              </div>
-            </>
+            <div className="context-menu-item" onClick={handleDuplicate}>
+              <span>📄 복제 (Duplicate)</span>
+            </div>
           )}
           <div className="context-menu-divider" />
           <div className="context-menu-item" onClick={handleCopyPath}>
-            <span>경로 복사 (Copy Path)</span>
+            <span>📋 경로 복사 (Copy Path)</span>
           </div>
         </div>
       )}
+
+      {/* 파일/폴더 이름 변경 모달 */}
+      <RenameModal
+        isOpen={renameModalState.isOpen}
+        currentName={renameModalState.entry?.name || ''}
+        isDir={renameModalState.entry?.isDir}
+        onConfirm={handleConfirmRename}
+        onCancel={() => setRenameModalState({ isOpen: false, entry: null })}
+      />
 
       {/* 작업 폴더 변경 시 탭 처리 확인 모달 */}
       <FolderChangeModal
