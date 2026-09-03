@@ -3,6 +3,8 @@ import { useFileStore } from '../../stores/fileStore';
 import { useFileSystem } from '../../hooks/useFileSystem';
 import { formatShortcut } from '../../utils/shortcut';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { writeFile, renameFile } from '../../utils/fileSystem';
+import { RenameModal } from '../Modal/RenameModal';
 import './TabBar.css';
 
 export const TabBar: React.FC = () => {
@@ -11,7 +13,10 @@ export const TabBar: React.FC = () => {
   const setActiveTabId = useFileStore((state) => state.setActiveTabId);
   const newFile = useFileStore((state) => state.newFile);
   const closeOtherTabs = useFileStore((state) => state.closeOtherTabs);
-  const { handleCloseTab, handleRename } = useFileSystem();
+  const renameTabTitle = useFileStore((state) => state.renameTabTitle);
+  const retargetTabPath = useFileStore((state) => state.retargetTabPath);
+  const triggerRefresh = useFileStore((state) => state.triggerRefresh);
+  const { handleCloseTab } = useFileSystem();
 
   // 탭 컨테이너 참조 및 활성 탭 참조
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -32,13 +37,24 @@ export const TabBar: React.FC = () => {
 
   const menuRef = useRef<HTMLDivElement | null>(null);
 
+  // 이름 변경 모달 상태
+  const [renameModalState, setRenameModalState] = useState<{
+    isOpen: boolean;
+    tabId: string;
+    currentName: string;
+  }>({
+    isOpen: false,
+    tabId: '',
+    currentName: '',
+  });
+
   // ─── 1. 활성 탭 자동 시야 확보 (Auto Scroll-Into-View) ────────────────────────
   useEffect(() => {
     if (activeTabElementRef.current) {
       activeTabElementRef.current.scrollIntoView({
         behavior: 'smooth',
         inline: 'nearest',
-        block: 'nearest'
+        block: 'nearest',
       });
     }
   }, [activeTabId]);
@@ -46,7 +62,6 @@ export const TabBar: React.FC = () => {
   // ─── 2. 마우스 휠 가로 스크롤 변환 ──────────────────────────────────────────
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (tabsContainerRef.current) {
-      // 휠을 굴리면 상하 대신 가로로 자연스럽게 스크롤
       tabsContainerRef.current.scrollLeft += e.deltaY;
     }
   }, []);
@@ -67,10 +82,21 @@ export const TabBar: React.FC = () => {
     };
   }, []);
 
+  // 탭 더블클릭 시 이름 변경 모달 오픈
+  const handleTabDoubleClick = (tabId: string, title: string) => {
+    setContextMenu(null);
+    setRenameModalState({
+      isOpen: true,
+      tabId,
+      currentName: title,
+    });
+  };
+
+  // 탭 우클릭 핸들러
   const handleTabContextMenu = (e: React.MouseEvent, tabId: string) => {
     e.preventDefault();
-    const MENU_WIDTH = 180;
-    const MENU_HEIGHT = 130;
+    const MENU_WIDTH = 190;
+    const MENU_HEIGHT = 220;
     const x = Math.min(e.clientX, window.innerWidth - MENU_WIDTH - 8);
     const y = Math.min(e.clientY, window.innerHeight - MENU_HEIGHT - 8);
     setContextMenu({
@@ -81,13 +107,22 @@ export const TabBar: React.FC = () => {
     });
   };
 
+  // 컨텍스트 메뉴: 이름 변경
   const onRenameClick = () => {
     if (contextMenu) {
-      handleRename(contextMenu.tabId);
+      const tab = tabs.find((t) => t.id === contextMenu.tabId);
+      if (tab) {
+        setRenameModalState({
+          isOpen: true,
+          tabId: tab.id,
+          currentName: tab.title,
+        });
+      }
       setContextMenu(null);
     }
   };
 
+  // 컨텍스트 메뉴: 탐색기에서 열기
   const onShowInExplorerClick = async () => {
     if (contextMenu) {
       const tab = tabs.find((t) => t.id === contextMenu.tabId);
@@ -104,6 +139,24 @@ export const TabBar: React.FC = () => {
     }
   };
 
+  // 컨텍스트 메뉴: 경로 복사
+  const onCopyPathClick = async () => {
+    if (contextMenu) {
+      const tab = tabs.find((t) => t.id === contextMenu.tabId);
+      if (tab?.filePath) {
+        try {
+          await navigator.clipboard.writeText(tab.filePath);
+        } catch (err) {
+          console.error('경로 복사 실패:', err);
+        }
+      } else {
+        alert('아직 디스크에 저장되지 않은 파일입니다.');
+      }
+      setContextMenu(null);
+    }
+  };
+
+  // 컨텍스트 메뉴: 다른 탭 모두 닫기
   const onCloseOthersClick = () => {
     if (contextMenu) {
       closeOtherTabs(contextMenu.tabId);
@@ -111,7 +164,45 @@ export const TabBar: React.FC = () => {
     }
   };
 
-  const filteredTabs = tabs.filter(t => 
+  // 이름 변경 확정 핸들러
+  const handleConfirmRename = async (newName: string) => {
+    const { tabId } = renameModalState;
+    const tab = tabs.find((t) => t.id === tabId);
+    setRenameModalState({ isOpen: false, tabId: '', currentName: '' });
+    if (!tab) return;
+
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === tab.title) return;
+
+    try {
+      if (tab.filePath) {
+        const sep = tab.filePath.includes('/') ? '/' : '\\';
+        const lastSepIndex = tab.filePath.lastIndexOf(sep);
+        const newPath = lastSepIndex < 0 
+          ? trimmed 
+          : lastSepIndex === 0 
+            ? `${sep}${trimmed}` 
+            : `${tab.filePath.substring(0, lastSepIndex)}${sep}${trimmed}`;
+
+        // 미저장 내용이 있다면 먼저 디스크 저장
+        if (tab.isDirty) {
+          await writeFile(tab.filePath, tab.content);
+        }
+
+        await renameFile(tab.filePath, newPath);
+        retargetTabPath(tab.filePath, newPath);
+        renameTabTitle(tab.id, trimmed);
+        triggerRefresh();
+      } else {
+        renameTabTitle(tab.id, trimmed);
+      }
+    } catch (err) {
+      console.error('이름 변경 실패:', err);
+      alert('파일 이름을 변경할 수 없습니다.');
+    }
+  };
+
+  const filteredTabs = tabs.filter((t) =>
     t.title.toLowerCase().includes(tabSearchQuery.toLowerCase()) ||
     (t.filePath && t.filePath.toLowerCase().includes(tabSearchQuery.toLowerCase()))
   );
@@ -134,7 +225,14 @@ export const TabBar: React.FC = () => {
               onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
               title={tab.filePath || tab.title}
             >
-              <span className={`tab-title ${tab.isDeletedFromDisk ? 'deleted' : ''}`}>
+              <span 
+                className={`tab-title ${tab.isDeletedFromDisk ? 'deleted' : ''}`}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  handleTabDoubleClick(tab.id, tab.title);
+                }}
+                title="더블클릭하여 파일명 수정"
+              >
                 {tab.title}
                 {tab.isDeletedFromDisk && <span className="tab-deleted-tag">삭제됨</span>}
               </span>
@@ -237,31 +335,44 @@ export const TabBar: React.FC = () => {
         </div>
       </div>
 
-      {/* 우클릭 커스텀 컨텍스트 메뉴 */}
+      {/* 우클릭 커스텀 컨텍스트 메뉴 (탐색기와 완전히 동일한 양식 및 스타일) */}
       {contextMenu?.visible && (
         <div
           ref={menuRef}
-          className="tab-context-menu"
+          className="explorer-context-menu"
           style={{
             top: `${contextMenu.y}px`,
             left: `${contextMenu.x}px`,
           }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div className="menu-item" onClick={onRenameClick}>
-            📝 이름 변경 (Rename)
+          <div className="context-menu-item" onClick={onRenameClick}>
+            <span>📝 이름 변경 (Rename)...</span>
           </div>
-          <div className="menu-item" onClick={onShowInExplorerClick}>
-            📂 폴더에서 열기
+          <div className="context-menu-item" onClick={onShowInExplorerClick}>
+            <span>📂 탐색기에서 열기</span>
           </div>
-          <div className="menu-divider" />
-          <div className="menu-item" onClick={() => { handleCloseTab(contextMenu.tabId); setContextMenu(null); }}>
-            ❌ 탭 닫기
+          <div className="context-menu-item" onClick={onCopyPathClick}>
+            <span>📋 경로 복사 (Copy Path)</span>
           </div>
-          <div className="menu-item" onClick={onCloseOthersClick}>
-            🚫 다른 탭 모두 닫기
+          <div className="context-menu-divider" />
+          <div className="context-menu-item" onClick={() => { handleCloseTab(contextMenu.tabId); setContextMenu(null); }}>
+            <span>❌ 탭 닫기</span>
+          </div>
+          <div className="context-menu-item" onClick={onCloseOthersClick}>
+            <span>🚫 다른 탭 모두 닫기</span>
           </div>
         </div>
       )}
+
+      {/* 파일명 변경 모달 */}
+      <RenameModal
+        isOpen={renameModalState.isOpen}
+        currentName={renameModalState.currentName}
+        onConfirm={handleConfirmRename}
+        onCancel={() => setRenameModalState({ isOpen: false, tabId: '', currentName: '' })}
+      />
     </div>
   );
 };
+
