@@ -125,13 +125,6 @@ export const useFileStore = create<FileState>((set, get) => {
       const tabIndex = tabs.findIndex((t) => t.id === id);
       if (tabIndex === -1) return;
 
-      const targetTab = tabs[tabIndex];
-      // 미저장 경고 검사
-      if (targetTab.isDirty) {
-        const confirmClose = window.confirm(`'${targetTab.title}' 파일의 수정사항이 저장되지 않았습니다.\n저장하지 않고 닫으시겠습니까?`);
-        if (!confirmClose) return;
-      }
-
       const newTabs = tabs.filter((t) => t.id !== id);
       let newActiveTabId = activeTabId;
 
@@ -149,15 +142,7 @@ export const useFileStore = create<FileState>((set, get) => {
     },
 
     closeOtherTabs: (id) => {
-      const { tabs } = get();
-      const otherDirtyTabs = tabs.filter((t) => t.id !== id && t.isDirty);
-      
-      if (otherDirtyTabs.length > 0) {
-        const confirmClose = window.confirm('저장되지 않은 다른 탭들이 있습니다.\n저장하지 않고 모두 닫으시겠습니까?');
-        if (!confirmClose) return;
-      }
-
-      const newTabs = tabs.filter((t) => t.id === id);
+      const newTabs = get().tabs.filter((t) => t.id === id);
       set({ tabs: newTabs, activeTabId: id });
       persistWorkspaceState(newTabs, id);
     },

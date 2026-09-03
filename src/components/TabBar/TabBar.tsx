@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useFileStore } from '../../stores/fileStore';
-import { useFileSystem } from '../../hooks/useFileSystem';
+import { Tab } from '../../types';
 import { formatShortcut } from '../../utils/shortcut';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { writeFile, renameFile } from '../../utils/fileSystem';
 import { RenameModal } from '../Modal/RenameModal';
+import { UnsavedFilesModal } from '../Modal/UnsavedFilesModal';
 import './TabBar.css';
 
 export const TabBar: React.FC = () => {
@@ -12,11 +13,11 @@ export const TabBar: React.FC = () => {
   const activeTabId = useFileStore((state) => state.activeTabId);
   const setActiveTabId = useFileStore((state) => state.setActiveTabId);
   const newFile = useFileStore((state) => state.newFile);
+  const closeTab = useFileStore((state) => state.closeTab);
   const closeOtherTabs = useFileStore((state) => state.closeOtherTabs);
   const renameTabTitle = useFileStore((state) => state.renameTabTitle);
   const retargetTabPath = useFileStore((state) => state.retargetTabPath);
   const triggerRefresh = useFileStore((state) => state.triggerRefresh);
-  const { handleCloseTab } = useFileSystem();
 
   // 탭 컨테이너 참조 및 활성 탭 참조
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -36,6 +37,12 @@ export const TabBar: React.FC = () => {
   } | null>(null);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // 미저장 변경사항 닫기 확인 모달 상태
+  const [pendingUnsavedClose, setPendingUnsavedClose] = useState<{
+    dirtyTabs: Tab[];
+    onConfirm: () => void;
+  } | null>(null);
 
   // 이름 변경 모달 상태
   const [renameModalState, setRenameModalState] = useState<{
@@ -156,10 +163,34 @@ export const TabBar: React.FC = () => {
     }
   };
 
+  // 탭 닫기 요청 (미저장 파일인 경우 확인 모달 연동)
+  const handleCloseTabRequest = (tabId: string) => {
+    const tab = tabs.find((t) => t.id === tabId);
+    if (!tab) return;
+
+    if (tab.isDirty) {
+      setPendingUnsavedClose({
+        dirtyTabs: [tab],
+        onConfirm: () => closeTab(tab.id),
+      });
+    } else {
+      closeTab(tab.id);
+    }
+  };
+
   // 컨텍스트 메뉴: 다른 탭 모두 닫기
   const onCloseOthersClick = () => {
     if (contextMenu) {
-      closeOtherTabs(contextMenu.tabId);
+      const targetId = contextMenu.tabId;
+      const otherDirtyTabs = tabs.filter((t) => t.id !== targetId && t.isDirty);
+      if (otherDirtyTabs.length > 0) {
+        setPendingUnsavedClose({
+          dirtyTabs: otherDirtyTabs,
+          onConfirm: () => closeOtherTabs(targetId),
+        });
+      } else {
+        closeOtherTabs(targetId);
+      }
       setContextMenu(null);
     }
   };
@@ -241,7 +272,7 @@ export const TabBar: React.FC = () => {
                 className="tab-close"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleCloseTab(tab.id);
+                  handleCloseTabRequest(tab.id);
                 }}
                 title="탭 닫기"
               >
@@ -319,7 +350,7 @@ export const TabBar: React.FC = () => {
                           className="dropdown-item-close"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleCloseTab(tab.id);
+                            handleCloseTabRequest(tab.id);
                           }}
                           title="탭 닫기"
                         >
@@ -356,13 +387,29 @@ export const TabBar: React.FC = () => {
             <span>📋 경로 복사 (Copy Path)</span>
           </div>
           <div className="context-menu-divider" />
-          <div className="context-menu-item" onClick={() => { handleCloseTab(contextMenu.tabId); setContextMenu(null); }}>
+          <div className="context-menu-item" onClick={() => { handleCloseTabRequest(contextMenu.tabId); setContextMenu(null); }}>
             <span>❌ 탭 닫기</span>
           </div>
           <div className="context-menu-item" onClick={onCloseOthersClick}>
             <span>🚫 다른 탭 모두 닫기</span>
           </div>
         </div>
+      )}
+
+      {/* 미저장 변경사항 닫기 확인 모달 */}
+      {pendingUnsavedClose && (
+        <UnsavedFilesModal
+          dirtyTabs={pendingUnsavedClose.dirtyTabs}
+          onConfirmClose={() => {
+            if (pendingUnsavedClose) {
+              pendingUnsavedClose.onConfirm();
+              setPendingUnsavedClose(null);
+            }
+          }}
+          onCancel={() => {
+            setPendingUnsavedClose(null);
+          }}
+        />
       )}
 
       {/* 파일명 변경 모달 */}
